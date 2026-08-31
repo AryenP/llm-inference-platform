@@ -1,0 +1,27 @@
+[project]
+name = "llm-inference-platform"
+version = "0.1.0"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "httpx",
+    "psycopg[binary]",
+    "pgvector",
+    "pydantic-settings",
+]
+
+# vllm is linux/CUDA only — installing it on the laptop will fail.
+# On the GPU box: uv sync --extra serve
+[project.optional-dependencies]
+serve = ["vllm"]
+eval = ["ragas", "datasets", "rank-bm25"]
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

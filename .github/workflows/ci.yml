@@ -1,0 +1,28 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --group dev
+      - run: uv run ruff check .
+      # exit 5 = no tests collected; drop this guard once tests exist
+      - run: uv run pytest -q || [ $? -eq 5 ]
+
+  # The eval needs a live vLLM endpoint and hosted runners have no GPU.
+  # Set the EVAL_ENDPOINT repo variable to the GPU box, or move this to a
+  # self-hosted runner on that box.
+  eval-gate:
+    if: vars.EVAL_ENDPOINT != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --group dev --extra eval
+      - run: uv run python -m eval.run --golden eval/golden.jsonl --endpoint "$EVAL_ENDPOINT" --gate
+        env:
+          EVAL_ENDPOINT: ${{ vars.EVAL_ENDPOINT }}

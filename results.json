@@ -1,0 +1,19 @@
+{
+  "runs": [],
+  "schema": {
+    "run_id": "string",
+    "timestamp": "iso8601",
+    "hardware": "string",
+    "model": "string",
+    "quantization": "fp16 | awq | int8",
+    "input_len_tokens": "int",
+    "request_rate": "float",
+    "n_requests": "int",
+    "n_warmup_discarded": "int",
+    "prefix_cache": "disabled | flushed",
+    "ttft_ms": {"p50": "float", "p95": "float"},
+    "itl_ms": {"p50": "float", "p95": "float"},
+    "throughput_rps": "float",
+    "cost_per_1k_usd": "float"
+  }
+}
