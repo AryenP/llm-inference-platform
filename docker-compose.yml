@@ -1,3 +1,5 @@
+# Week 7 packaging target. Not used on the pod — RunPod containers have no docker
+# daemon, so postgres is installed natively there by scripts/setup_postgres.sh.
 services:
   postgres:
     image: pgvector/pgvector:pg17

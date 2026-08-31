@@ -26,11 +26,16 @@ eval harness (CLI) → golden set
 ```
 cp .env.example .env      # model paths, HF_TOKEN
 uv sync                   # api + eval deps; vllm is installed separately, see below
+./scripts/setup_postgres.sh   # once per host: postgres 17 + pgvector
 ./init.sh                 # postgres, vllm, api
 ./init.sh test            # unit tests
 ./init.sh eval            # harness against the golden set
 ./init.sh bench           # benchmark sweep → results.json
 ```
+
+Postgres runs natively rather than through docker-compose: the GPU host is itself
+a container with no docker daemon. `docker-compose.yml` is the week-7 packaging
+target, not the dev path.
 
 vLLM is linux/CUDA only and is installed on the GPU host rather than into the
 project venv:
