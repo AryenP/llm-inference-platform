@@ -10,8 +10,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --group dev
       - run: uv run ruff check .
-      # exit 5 = no tests collected; drop this guard once tests exist
-      - run: uv run pytest -q || [ $? -eq 5 ]
+      - run: uv run pytest -q
 
   # The eval needs a live vLLM endpoint and hosted runners have no GPU.
   # Set the EVAL_ENDPOINT repo variable to the GPU box, or move this to a
