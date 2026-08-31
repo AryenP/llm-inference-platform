@@ -7,7 +7,7 @@ case "${1:-up}" in
   up)
     : "${MODEL:?set MODEL in .env}"
     docker compose up -d postgres
-    uv run vllm serve "$MODEL" --port 8000 &
+    vllm serve "$MODEL" --port 8000 --max-model-len 8192 &
     uv run uvicorn app.main:app --port 8080 --reload
     ;;
   test)   uv run pytest -q ;;

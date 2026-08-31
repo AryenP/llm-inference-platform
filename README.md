@@ -24,12 +24,24 @@ eval harness (CLI) → golden set
 ## Running it
 
 ```
-cp .env.example .env      # MODEL, HF_TOKEN
-uv sync --extra serve     # vllm is linux/CUDA only, hence the extra
+cp .env.example .env      # model paths, HF_TOKEN
+uv sync                   # api + eval deps; vllm is installed separately, see below
 ./init.sh                 # postgres, vllm, api
+./init.sh test            # unit tests
 ./init.sh eval            # harness against the golden set
 ./init.sh bench           # benchmark sweep → results.json
 ```
+
+vLLM is linux/CUDA only and is installed on the GPU host rather than into the
+project venv:
+
+```
+uv pip install --system vllm
+```
+
+`/query` proxies a streamed completion and returns the text with `ttft_ms` and
+`total_ms` measured around the stream, so first-token latency is recorded per
+request rather than reconstructed afterwards.
 
 ## Benchmark methodology
 
@@ -41,4 +53,5 @@ Numbers in `results.json` are measured, not estimated. The harness enforces:
 - Warmup requests discarded, count recorded
 - TTFT and ITL reported separately, never collapsed into one "latency"
 - Every row carries hardware, model, quantization, input length, request rate,
-  and run count. FP16 is compared against AWQ-INT4 on identical inputs
+  and run count. BF16 (`Qwen/Qwen3-8B`) is compared against 4-bit AWQ
+  (`Qwen/Qwen3-8B-AWQ`) on identical inputs
