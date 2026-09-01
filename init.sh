@@ -26,9 +26,14 @@ case "${1:-up}" in
       --gpu-memory-utilization "${GPU_MEM_UTIL:-0.85}" &
     uv run uvicorn app.main:app --port 8080 --reload
     ;;
+  serve)
+    : "${MODEL:?set MODEL in .env}"
+    exec $(vllm_cmd) serve "$MODEL" --port 8000 --max-model-len "${MAX_MODEL_LEN:-8192}" \
+      --gpu-memory-utilization "${GPU_MEM_UTIL:-0.85}"
+    ;;
   test)   uv run pytest -q ;;
   eval)   uv run python -m eval.run --golden eval/golden.jsonl ;;
   bench)  uv run python -m bench.sweep --out results.json ;;
   down)   pkill -f "vllm.entrypoints" || true; service postgresql stop 2>/dev/null || true ;;
-  *) echo "usage: ./init.sh [up|test|eval|bench|down]"; exit 1 ;;
+  *) echo "usage: ./init.sh [up|serve|test|eval|bench|down]"; exit 1 ;;
 esac

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Long pastes arrive mangled by bracketed paste; run this instead of a one-liner.
+# ~13 GB: bge-m3 ships ONNX and several weight formats alongside the safetensors.
 # Usage: ./scripts/pull_models.sh [dest]        (default ~/models)
 #        WITH_BF16=1 ./scripts/pull_models.sh   also pulls the 16.4 GB BF16 weights
 set -euo pipefail
