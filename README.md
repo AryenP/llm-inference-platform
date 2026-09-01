@@ -41,8 +41,11 @@ vLLM is linux/CUDA only and is installed on the GPU host rather than into the
 project venv:
 
 ```
-uv pip install --system vllm
+uv pip install --system vllm     # pod / root images
+uv sync --extra serve            # WSL and anywhere PEP 668 blocks --system
 ```
+
+`init.sh` uses whichever is present.
 
 `/query` proxies a streamed completion and returns the text with `ttft_ms` and
 `total_ms` measured around the stream, so first-token latency is recorded per
