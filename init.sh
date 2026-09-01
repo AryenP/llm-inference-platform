@@ -23,7 +23,7 @@ case "${1:-up}" in
     : "${MODEL:?set MODEL in .env}"
     start_postgres
     $(vllm_cmd) serve "$MODEL" --port 8000 --max-model-len 8192 \
-      --gpu-memory-utilization "${GPU_MEM_UTIL:-0.90}" &
+      --gpu-memory-utilization "${GPU_MEM_UTIL:-0.85}" &
     uv run uvicorn app.main:app --port 8080 --reload
     ;;
   test)   uv run pytest -q ;;

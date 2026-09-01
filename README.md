@@ -24,9 +24,10 @@ eval harness (CLI) → golden set
 ## Running it
 
 ```
-cp .env.example .env      # model paths, HF_TOKEN
+cp .env.example .env      # set the absolute model paths
 uv sync                   # api + eval deps; vllm is installed separately, see below
-./scripts/setup_postgres.sh   # once per host: postgres 17 + pgvector
+./scripts/pull_models.sh      # weights into ~/models
+./scripts/setup_postgres.sh   # once per host: postgres + pgvector
 ./init.sh                 # postgres, vllm, api
 ./init.sh test            # unit tests
 ./init.sh eval            # harness against the golden set
