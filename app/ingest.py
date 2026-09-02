@@ -47,6 +47,11 @@ def store_page(conn, papers: list[Paper], model=None) -> int:
         for p in papers
         for i, text in enumerate(chunk(f"{p.title}. {p.abstract}"))
     ]
+    # re-chunking a paper can produce fewer chunks than last time; without this
+    # the old high-ord rows survive as orphans the upsert never touches
+    with conn.cursor() as cur:
+        cur.execute("delete from chunks where arxiv_id = any(%s)", ([p.arxiv_id for p in papers],))
+
     if rows:
         # chunks are written even without embeddings, so --skip-embed still
         # exercises the (arxiv_id, ord) conflict — the one carrying the volume

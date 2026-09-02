@@ -72,3 +72,53 @@ def test_overlap_never_shrinks_when_snapping_to_a_word():
     # overlap is never below target — it runs over by at most one word
     assert min(widths) >= 240
     assert max(widths) <= 240 + longest + 1
+
+
+class FakeCursor:
+    def __init__(self, log):
+        self.log = log
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def execute(self, sql, params=None):
+        self.log.append(("execute", " ".join(sql.split())[:60], params))
+
+    def executemany(self, sql, params=None):
+        self.log.append(("executemany", " ".join(sql.split())[:60], params))
+
+
+class FakeConn:
+    def __init__(self):
+        self.log = []
+
+    def cursor(self):
+        return FakeCursor(self.log)
+
+    def commit(self):
+        self.log.append(("commit", "", None))
+
+
+def test_store_page_clears_old_chunks_before_writing():
+    from datetime import UTC, datetime
+
+    from app.arxiv import Paper
+    from app.ingest import store_page
+
+    conn = FakeConn()
+    paper = Paper("2401.00001", "t", "a", ["cs.LG"], datetime.now(UTC), None)
+
+    n = store_page(conn, [paper])
+
+    verbs = [(kind, sql.split()[0]) for kind, sql, _ in conn.log if kind != "commit"]
+    # the delete has to land between the papers upsert and the chunk insert, or a
+    # re-chunk leaves orphaned high-ord rows the upsert never touches
+    assert verbs == [
+        ("executemany", "insert"),
+        ("execute", "delete"),
+        ("executemany", "insert"),
+    ]
+    assert n == 1
