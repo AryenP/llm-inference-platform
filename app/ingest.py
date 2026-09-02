@@ -4,12 +4,12 @@ import pathlib
 import psycopg
 from pgvector.psycopg import register_vector
 
-from app.arxiv import Paper, search
+from app.arxiv import Paper, pages
 from app.chunking import chunk
 from app.settings import settings
 
-# cs.LG and cs.DC narrowed to serving-adjacent work; broad enough for 12k papers,
-# narrow enough that the golden set can be answered from the corpus
+# cs.LG and cs.DC narrowed to serving-adjacent work; broad enough for a corpus in
+# the tens of thousands, narrow enough that the golden set stays answerable
 QUERY = (
     "(cat:cs.LG OR cat:cs.DC) AND "
     "(abs:inference OR abs:quantization OR abs:serving OR abs:latency OR abs:throughput)"
@@ -37,24 +37,23 @@ def upsert_papers(conn, papers: list[Paper]):
                 for p in papers
             ],
         )
-    conn.commit()
 
 
-def embed_and_store(conn, papers: list[Paper], batch: int = 64):
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer(settings.embed_model)
+def store_page(conn, papers: list[Paper], model=None) -> int:
+    upsert_papers(conn, papers)
 
     rows = [
         (p.arxiv_id, i, text)
         for p in papers
         for i, text in enumerate(chunk(f"{p.title}. {p.abstract}"))
     ]
-
-    for i in range(0, len(rows), batch):
-        window = rows[i : i + batch]
-        vectors = model.encode(
-            [r[2] for r in window], normalize_embeddings=True, show_progress_bar=False
+    if rows:
+        # chunks are written even without embeddings, so --skip-embed still
+        # exercises the (arxiv_id, ord) conflict — the one carrying the volume
+        vectors = (
+            model.encode([r[2] for r in rows], normalize_embeddings=True, show_progress_bar=False)
+            if model
+            else [None] * len(rows)
         )
         with conn.cursor() as cur:
             cur.executemany(
@@ -62,11 +61,10 @@ def embed_and_store(conn, papers: list[Paper], batch: int = 64):
                    values (%s, %s, %s, %s)
                    on conflict (arxiv_id, ord) do update set
                      text = excluded.text, embedding = excluded.embedding""",
-                [(a, o, t, v) for (a, o, t), v in zip(window, vectors, strict=True)],
+                [(a, o, t, v) for (a, o, t), v in zip(rows, vectors, strict=True)],
             )
-        conn.commit()
-        print(f"  embedded {min(i + batch, len(rows))}/{len(rows)} chunks", flush=True)
 
+    conn.commit()
     return len(rows)
 
 
@@ -74,27 +72,36 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=12000)
     ap.add_argument("--query", default=QUERY)
-    ap.add_argument("--skip-embed", action="store_true", help="fetch and store metadata only")
+    ap.add_argument("--window-days", type=int, default=120)
+    ap.add_argument("--skip-embed", action="store_true", help="store chunks with null embeddings")
     args = ap.parse_args()
 
-    if not settings.embed_model and not args.skip_embed:
-        raise SystemExit("EMBED_MODEL is unset in .env")
+    model = None
+    if not args.skip_embed:
+        if not settings.embed_model:
+            raise SystemExit("EMBED_MODEL is unset in .env")
+        from sentence_transformers import SentenceTransformer
+
+        model = SentenceTransformer(settings.embed_model)
 
     with psycopg.connect(settings.database_url) as conn:
         apply_schema(conn)
         register_vector(conn)
 
-        print(f"fetching up to {args.limit} papers", flush=True)
-        papers = search(args.query, args.limit)
-        print(f"got {len(papers)}", flush=True)
+        papers = chunks = 0
+        # written per page: a mid-run failure costs one page, not the whole fetch,
+        # and a re-run resumes rather than starting over
+        for page in pages(args.query, args.limit, window_days=args.window_days):
+            papers += len(page)
+            chunks += store_page(conn, page, model)
+            print(f"  {papers} papers, {chunks} chunks", flush=True)
 
-        upsert_papers(conn, papers)
-        n = 0 if args.skip_embed else embed_and_store(conn, papers)
-
-        counts = conn.execute(
+        totals = conn.execute(
             "select (select count(*) from papers), (select count(*) from chunks)"
         ).fetchone()
-        print(f"papers={counts[0]} chunks={counts[1]} embedded_this_run={n}")
+        print(
+            f"papers={totals[0]} chunks={totals[1]} embedded_this_run={0 if model is None else chunks}"
+        )
 
 
 if __name__ == "__main__":

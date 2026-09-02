@@ -1,7 +1,12 @@
-# Character budget rather than tokens: abstracts are short enough that nearly all
-# land in one chunk, and pulling in a tokenizer to split the handful that don't
-# would cost more than it buys.
-MAX_CHARS = 1800
+# Character budget rather than tokens: pulling in a tokenizer to split text this
+# short would cost more than it buys.
+#
+# 2400 is chosen so an arXiv title+abstract is always exactly one chunk — arXiv
+# caps abstracts near 1920 characters, and a 1800 budget split the longest few
+# into a full chunk plus a ~120-character stub, which would sit in the index as a
+# near-contentless vector. Retrieval granularity here is deliberately one
+# abstract per vector. The splitting path exists for the full-text upgrade.
+MAX_CHARS = 2400
 OVERLAP_CHARS = 240
 
 
