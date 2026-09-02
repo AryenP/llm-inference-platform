@@ -54,3 +54,21 @@ def test_long_text_splits_with_overlap_on_word_boundaries():
     assert parts[0].split()[-1] in parts[1].split()
     # every word survives somewhere
     assert set(words.split()) == {w for p in parts for w in p.split()}
+
+
+def test_overlap_never_shrinks_when_snapping_to_a_word():
+    words = " ".join(f"{'w' * 9}{i}" for i in range(2000))
+    parts = chunk(words, max_chars=1800, overlap=240)
+
+    starts, cur = [], 0
+    for p in parts:
+        i = words.index(p, cur)
+        starts.append(i)
+        cur = i + 1
+    widths = [starts[i] + len(parts[i]) - starts[i + 1] for i in range(len(parts) - 1)]
+
+    longest = max(len(w) for w in words.split())
+    # snapping moves the resume point backward to a word start, so the real
+    # overlap is never below target — it runs over by at most one word
+    assert min(widths) >= 240
+    assert max(widths) <= 240 + longest + 1
