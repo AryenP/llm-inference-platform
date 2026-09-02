@@ -6,13 +6,22 @@
     "hardware": "string",
     "model": "string",
     "quantization": "fp16 | awq | int8",
+    "quant_kernel": "string \u2014 e.g. awq_marlin; vllm picks it from config.json",
+    "vllm_version": "string",
+    "sampler": "flashinfer | torch \u2014 differs between WSL2 and the rented card",
     "input_len_tokens": "int",
     "request_rate": "float",
     "n_requests": "int",
     "n_warmup_discarded": "int",
     "prefix_cache": "disabled | flushed",
-    "ttft_ms": {"p50": "float", "p95": "float"},
-    "itl_ms": {"p50": "float", "p95": "float"},
+    "ttft_ms": {
+      "p50": "float",
+      "p95": "float"
+    },
+    "itl_ms": {
+      "p50": "float",
+      "p95": "float"
+    },
     "throughput_rps": "float",
     "cost_per_1k_usd": "float"
   }
