@@ -28,6 +28,7 @@ cp .env.example .env      # set the absolute model paths
 uv sync                   # api + eval deps; vllm is installed separately, see below
 ./scripts/pull_models.sh      # weights into ~/models
 ./scripts/setup_postgres.sh   # once per host: postgres + pgvector
+./init.sh ingest              # arxiv corpus into pgvector
 ./init.sh                 # postgres, vllm, api
 ./init.sh test            # unit tests
 ./init.sh eval            # harness against the golden set

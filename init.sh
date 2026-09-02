@@ -67,6 +67,7 @@ case "${1:-up}" in
     exec $(vllm_cmd) serve "$MODEL" --port 8000 --max-model-len "${MAX_MODEL_LEN:-8192}" \
       --gpu-memory-utilization "${GPU_MEM_UTIL:-0.85}"
     ;;
+  ingest) shift; uv run python -m app.ingest "$@" ;;
   test)   uv run pytest -q ;;
   eval)   uv run python -m eval.run --golden eval/golden.jsonl ;;
   bench)  uv run python -m bench.sweep --out results.json ;;
@@ -75,5 +76,5 @@ case "${1:-up}" in
     pkill -f "vllm serve"       2>/dev/null || true
     service postgresql stop 2>/dev/null || true
     ;;
-  *) echo "usage: ./init.sh [up|serve|test|eval|bench|down]"; exit 1 ;;
+  *) echo "usage: ./init.sh [up|serve|ingest|test|eval|bench|down]"; exit 1 ;;
 esac

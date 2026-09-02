@@ -15,7 +15,8 @@ dependencies = [
 # On the GPU box: uv sync --extra serve
 [project.optional-dependencies]
 serve = ["vllm"]
-eval = ["ragas", "datasets", "rank-bm25"]
+eval = ["ragas", "datasets"]
+ingest = ["sentence-transformers"]
 
 [dependency-groups]
 dev = ["pytest", "ruff"]
