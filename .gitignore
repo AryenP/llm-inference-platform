@@ -12,3 +12,6 @@ SPEC.md
 TODO.md
 progress.md
 .claude/
+
+eval/candidates.jsonl
+eval/rejected.jsonl
