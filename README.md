@@ -1,11 +1,27 @@
 # llm-inference-platform
 
-Self-hosted LLM serving and evaluation stack: Qwen3-8B on vLLM behind a FastAPI
-gateway, hybrid retrieval over PostgreSQL + pgvector, and an evaluation harness
-that gates releases in CI. Runs on a single 48GB L40S.
+Self-hosted LLM serving with retrieval, and an evaluation harness that gates
+releases on measured quality rather than a smoke test.
 
-Work in progress. Serving and retrieval land first; the eval harness and the
-benchmark suite follow.
+Qwen3-8B on vLLM behind a FastAPI gateway, hybrid retrieval over
+PostgreSQL + pgvector across ~10k arXiv abstracts, and a CLI that scores
+retrieval and answer quality against a hand-verified question set and exits
+non-zero when a metric regresses.
+
+## Status
+
+| | |
+|---|---|
+| Serving + gateway | working — `/query` returns a completion with per-request TTFT |
+| Corpus | 10,000 papers, 11,991 chunks, HNSW + GIN indexed |
+| Golden set | in progress, 150 pairs verified by hand |
+| Eval harness | next |
+| Benchmark sweep | not started |
+
+**There are no performance numbers here yet.** When there are, they will be in
+`results.json` with the hardware, model, quantization, request rate and run count
+that produced them, and they will come from the rented GPU rather than the
+development card. See [Measurement](#measurement).
 
 ## Architecture
 
@@ -15,53 +31,68 @@ client → FastAPI gateway
            │    BM25 + dense (bge-m3) → reciprocal rank fusion → bge-reranker-v2-m3
            └→ generation: vLLM (OpenAI-compatible), Qwen3-8B
 
-eval harness (CLI) → golden set
-           → retrieval: precision@k, recall@k, MRR, nDCG
-           → answers: faithfulness, answer relevancy
-           → non-zero exit when a metric regresses past threshold
+eval/  → hand-verified question set
+           retrieval: precision@k, recall@k, MRR, nDCG
+           answers:   faithfulness, answer relevancy
+           gate:      non-zero exit when a metric regresses past threshold
+
+bench/ → vllm bench serve sweeps → results.json → cost curve
 ```
 
-## Running it
+## Measurement
+
+The point of the project is the measurements, so the rules are in the code rather
+than in a paragraph of intent:
+
+- **Latency and throughput are separate experiments.** Latency at a low request
+  rate, so TTFT reflects compute rather than queueing. Throughput as a saturation
+  sweep. One number for both would be meaningless.
+- **Prefix caching is disabled or flushed between runs**, and the run records
+  that it was. Repeating a sweep against a warm server inflates throughput.
+- **Warmup requests are discarded** and the count recorded — the first requests
+  after load include CUDA graph capture and compilation.
+- **TTFT and ITL are reported separately.** Prefill is compute-bound and decode is
+  memory-bandwidth-bound; collapsing them into "latency" hides which one moved.
+- **Every row carries its configuration:** hardware, model, quantization, kernel,
+  sampler, vLLM version, input length, request rate, run count.
+
+`/query` measures TTFT around the stream rather than reconstructing it after the
+fact, so a buffered response cannot masquerade as a fast one.
+
+## Quickstart
 
 ```
-cp .env.example .env      # set the absolute model paths
-uv sync                   # api + eval deps; vllm is installed separately, see below
-./scripts/pull_models.sh      # weights into ~/models
-./scripts/setup_postgres.sh   # once per host: postgres + pgvector
-./init.sh ingest              # arxiv corpus into pgvector
-./init.sh                 # postgres, vllm, api
-./init.sh test            # unit tests
-./init.sh eval            # harness against the golden set
-./init.sh bench           # benchmark sweep → results.json
+cp .env.example .env            # absolute model paths
+uv sync
+./scripts/pull_models.sh        # weights into ~/models
+./scripts/setup_postgres.sh     # postgres + pgvector, once per host
+./init.sh ingest                # arxiv corpus into pgvector
+./init.sh up                    # postgres, vllm, gateway
+./scripts/verify_day1.sh        # end-to-end check
 ```
 
-Postgres runs natively rather than through docker-compose: the GPU host is itself
-a container with no docker daemon. `docker-compose.yml` is the week-7 packaging
-target, not the dev path.
-
-vLLM is linux/CUDA only and is installed on the GPU host rather than into the
-project venv:
+vLLM is Linux/CUDA only and installs outside the project venv on hosts that allow
+it:
 
 ```
-uv pip install --system vllm     # pod / root images
-uv sync --extra serve            # WSL and anywhere PEP 668 blocks --system
+uv pip install --system vllm    # root images
+uv sync --extra serve           # where PEP 668 blocks --system
 ```
 
 `init.sh` uses whichever is present.
 
-`/query` proxies a streamed completion and returns the text with `ttft_ms` and
-`total_ms` measured around the stream, so first-token latency is recorded per
-request rather than reconstructed afterwards.
+## Layout
 
-## Benchmark methodology
+```
+app/      gateway, settings, arxiv client, chunking, ingest
+eval/     golden set generation, review tool, harness
+bench/    benchmark sweeps
+scripts/  host setup, model pulls, acceptance checks
+sql/      extensions and schema
+```
 
-Numbers in `results.json` are measured, not estimated. The harness enforces:
+## Why it is built this way
 
-- Latency and throughput are separate runs. Latency at a low request rate so
-  TTFT reflects compute rather than queueing; throughput as a saturation sweep
-- Prefix caching disabled or flushed between runs, recorded in the output
-- Warmup requests discarded, count recorded
-- TTFT and ITL reported separately, never collapsed into one "latency"
-- Every row carries hardware, model, quantization, input length, request rate,
-  and run count. BF16 (`Qwen/Qwen3-8B`) is compared against 4-bit AWQ
-  (`Qwen/Qwen3-8B-AWQ`) on identical inputs
+[DECISIONS.md](DECISIONS.md) records the choices and the reasoning, including a
+chunk-size change that the data reversed and an arXiv pagination ceiling that
+only shows up three minutes into a run.
