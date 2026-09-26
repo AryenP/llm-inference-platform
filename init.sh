@@ -31,6 +31,12 @@ vllm_up() {
 
 start_postgres() {
   pg_isready -q 2>/dev/null && return 0
+  # on a pod the cluster lives on the network volume, not where the distro puts it
+  if [ -d /workspace/pgdata ]; then
+    ver=$(ls /usr/lib/postgresql 2>/dev/null | sort -rn | head -1)
+    su postgres -c "/usr/lib/postgresql/$ver/bin/pg_ctl -D /workspace/pgdata \
+      -l /workspace/pgdata/server.log -w start" 2>/dev/null && { until pg_isready -q; do sleep 1; done; return 0; }
+  fi
   service postgresql start 2>/dev/null || {
     echo "postgres not installed — run ./scripts/setup_postgres.sh" >&2
     exit 1
