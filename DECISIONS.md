@@ -36,9 +36,26 @@ volume can only be attached at pod creation and cannot move afterwards, so it
 goes in the one datacenter that also stocks A100 SXM — a fallback that exists
 beats a cheaper one that doesn't.
 
-## Development on a 12 GB card, measurement on the rented one
+## Everything on the rented card
 
-Local development uses an RTX 4070. BF16 weights are 16.4 GB, so the bf16 model
+An earlier arrangement split development onto a local RTX 4070 and kept the
+rented GPU for measurement only. That ended when the machine stopped being
+reachable, and the single-host version is simpler in ways worth keeping: BF16
+fits in 48 GB, so the BF16-vs-AWQ comparison is available throughout rather than
+only at the end, and the sampler divergence below stops existing.
+
+The data center is **EU-NL-1** — the only one currently offering both L40S and
+network volumes. A volume cannot move between data centers, so the pod follows
+it. Round-trip latency from the US is around 160 ms; the benchmark driver runs on
+the pod against `localhost`, so measurements never cross the network.
+
+**Only the network volume survives a stop.** Apt packages, `/root` and `/tmp` are
+wiped between sessions, so the Postgres cluster lives on the volume at
+`/workspace/pgdata` and only the binaries are reinstalled each time.
+
+### The reasoning from the two-host period
+
+Kept because it governs any future split. Local development used an RTX 4070. BF16 weights are 16.4 GB, so the bf16 model
 cannot load there at all; local serving is the AWQ checkpoint, which leaves about
 3 GB for KV cache — 22,352 tokens, a maximum concurrency of 2.73x at 8192 tokens
 per request.
