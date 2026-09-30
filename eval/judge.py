@@ -1,0 +1,58 @@
+import asyncio
+from collections.abc import Sequence
+
+from app.settings import settings
+
+
+def build_llm(model: str | None = None):
+    # ragas speaks OpenAI; vLLM serves an OpenAI-compatible endpoint, so the judge
+    # runs on the same model being evaluated rather than a paid external API
+    import openai
+    from ragas.llms import llm_factory
+
+    client = openai.OpenAI(base_url=settings.vllm_url, api_key="not-used")
+    return llm_factory(model or settings.model, provider="openai", client=client)
+
+
+async def _score_one(metric, item: dict, contexts: Sequence[str], needs_contexts: bool):
+    try:
+        if needs_contexts:
+            result = await metric.ascore(
+                user_input=item["question"],
+                response=item["answer"],
+                retrieved_contexts=list(contexts),
+            )
+        else:
+            result = await metric.ascore(user_input=item["question"], response=item["answer"])
+        return float(result.value)
+    except Exception as exc:  # noqa: BLE001 - a judge fails in many ways (timeout,
+        # unparseable output, rate limit); one bad question must not lose a 150-question run
+        return exc
+
+
+async def _score_all(metric, items, contexts_by_id, needs_contexts):
+    return await asyncio.gather(
+        *(
+            _score_one(metric, it, contexts_by_id.get(it["cid"], []), needs_contexts)
+            for it in items
+        )
+    )
+
+
+def summarise(scores: Sequence) -> dict:
+    ok = [s for s in scores if isinstance(s, float)]
+    failed = len(scores) - len(ok)
+    # a mean over the scored subset, with the unscored count beside it — averaging
+    # failures in as zeros would understate the metric and hide that they happened
+    return {
+        "n_scored": len(ok),
+        "n_failed": failed,
+        "mean": sum(ok) / len(ok) if ok else None,
+    }
+
+
+def faithfulness(items, contexts_by_id, llm=None) -> dict:
+    from ragas.metrics.collections import Faithfulness
+
+    metric = Faithfulness(llm=llm or build_llm())
+    return summarise(asyncio.run(_score_all(metric, items, contexts_by_id, True)))

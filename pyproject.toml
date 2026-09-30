@@ -15,7 +15,8 @@ dependencies = [
 # On the GPU box: uv sync --extra serve
 [project.optional-dependencies]
 serve = ["vllm"]
-eval = ["ragas", "datasets"]
+# langchain-community 0.4 dropped the module ragas 0.4.3 imports at load time
+eval = ["ragas>=0.4", "langchain-community<0.4", "openai"]
 ingest = ["sentence-transformers"]
 
 [dependency-groups]
