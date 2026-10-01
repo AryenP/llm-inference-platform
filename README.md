@@ -14,14 +14,14 @@ non-zero when a metric regresses.
 |---|---|
 | Serving + gateway | working — `/query` returns a completion with per-request TTFT |
 | Corpus | 10,000 papers, 11,991 chunks, HNSW + GIN indexed |
-| Golden set | in progress, 150 pairs verified by hand |
-| Eval harness | next |
-| Benchmark sweep | not started |
+| Golden set | generation and review tooling built; 150 pairs not yet verified |
+| Eval harness | built and tested — retrieval metrics, fusion, faithfulness, regression gate. Not yet run against a golden set |
+| Benchmark sweep | statistics and the results recorder built; the sweep driver needs a live server |
 
-**There are no performance numbers here yet.** When there are, they will be in
-`results.json` with the hardware, model, quantization, request rate and run count
-that produced them, and they will come from the rented GPU rather than the
-development card. See [Measurement](#measurement).
+**There are no performance numbers here yet**, and the recorder will not accept
+one that arrives without its configuration — hardware, model, quantization,
+kernel, sampler, request rate, run count and prefix-cache state are all required
+before a row can be written. See [Measurement](#measurement).
 
 ## Architecture
 
