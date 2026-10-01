@@ -150,10 +150,26 @@ Everything surviving that is read and kept, edited, or dropped by hand. Automate
 judges are calibrated against this set, so it is the one part that cannot be
 generated and trusted.
 
+## Recall is scored both per chunk and per paper
+
+Every evaluation reports both. Chunk-level is the stricter measure: only the
+exact chunk the question was drawn from counts. Paper-level credits any chunk of
+the right paper, which matters because 1,991 of 10,000 papers hold two chunks —
+retrieving the second half of the correct abstract is a hit by any reasonable
+reading, and scoring it as a miss would understate the retriever by an amount
+that varies with how long the abstracts happen to be.
+
+Neither is "the" number. Reporting one without the other invites the obvious
+question about which was chosen and why, so both go in the output.
+
+A related note lives in the metrics module: with one relevant document per
+question, **precision@k cannot exceed 1/k**. A precision@5 of 0.2 is arithmetic,
+not a verdict on the retriever, so recall and MRR carry the signal.
+
 ## Open
 
-**Is recall@k scored per chunk or per paper?** Candidates record both
-`arxiv_id` and `chunk_id`. Paper-level looks more honest here — with ~20% of
-papers holding two chunks, retrieving the second half of the correct abstract
-would otherwise count as a miss — but chunk-level is the stricter measure and
-both will be reported.
+**The benchmark sweep driver.** `vllm bench serve` produces the raw samples, but
+its output schema has not been read against a running server yet, and inventing
+the key names would be the kind of untested glue that fails mid-sweep. The
+statistics and the recorder underneath it are written and tested; the subprocess
+layer waits for a machine.
