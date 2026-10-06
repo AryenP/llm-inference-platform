@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-[ -f .env ] && set -a && . ./.env && set +a
+# An explicit environment variable beats the file. Sourcing .env with `set -a`
+# clobbers anything already exported, so `GPU_MEM_UTIL=0.5 ./init.sh serve`
+# silently ran at whatever .env said instead.
+if [ -f .env ]; then
+  while IFS='=' read -r key value; do
+    case "$key" in ''|\#*) continue ;; esac
+    if [ -z "$(eval "printf '%s' \"\${$key:-}\"")" ]; then
+      export "$key=$value"
+    fi
+  done < .env
+fi
 
 # FlashInfer JIT-compiles its sampling kernels on first use and needs nvcc plus
 # ninja. Pod images ship the toolkit but leave it off PATH, and the failure
