@@ -21,10 +21,19 @@ def dense(conn, embedding, k: int) -> list[Hit]:
 def lexical(conn, query: str, k: int) -> list[Hit]:
     # Postgres FTS standing in for BM25: ts_rank_cd with the default weights is
     # close enough in ordering, and keeping it in the database avoids holding a
-    # second index of the corpus in the application
+    # second index of the corpus in the application.
+    #
+    # The terms are OR'd, not AND'd. plainto_tsquery ANDs everything, so a
+    # natural-language question demands that one abstract contain every word in
+    # it — which matched almost nothing and made lexical recall look like 0.04.
+    # Routing the question through to_tsvector first lexemises and deduplicates
+    # it safely, then the lexemes are OR'd and ts_rank_cd does the ordering.
     rows = conn.execute(
         """select c.id, c.arxiv_id
-             from chunks c, plainto_tsquery('english', %s) q
+             from chunks c,
+                  to_tsquery('english',
+                      array_to_string(
+                          tsvector_to_array(to_tsvector('english', %s)), ' | ')) q
             where c.tsv @@ q
             order by ts_rank_cd(c.tsv, q) desc
             limit %s""",
