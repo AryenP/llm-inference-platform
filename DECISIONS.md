@@ -208,6 +208,19 @@ toolkit is present, and `ninja` is part of the `serve` extra. The alternative �
 do — works but changes the sampler, and a sampler that differs between the
 machine under test and a production deployment is a difference worth not having.
 
+## Stopping vLLM means killing what is on the GPU
+
+`pkill -f "vllm serve"` kills the API server and leaves the **engine worker**
+alive, because that process's command line does not contain "vllm". It keeps the
+entire card allocated — 42 GiB of 44 in the case that cost an hour here — and
+every subsequent start dies with `Engine core initialization failed`, which names
+neither the stale process nor the memory.
+
+`init.sh down` now kills whatever `nvidia-smi --query-compute-apps` reports, then
+the server by name. The diagnostic that actually finds this is comparing
+`nvidia-smi --query-compute-apps` against `pgrep -af vllm`: when the PIDs differ,
+that is the problem.
+
 ## Pods must pin a CUDA floor
 
 A pod's host driver is whatever the scheduler happens to give you, and the
