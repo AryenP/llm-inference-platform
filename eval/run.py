@@ -5,21 +5,32 @@ import pathlib
 import psycopg
 from pgvector.psycopg import register_vector
 
-from app.retrieval import dense, lexical, papers, rrf
+from app.retrieval import dense, lexical, papers, rerank, rrf
 from app.settings import settings
 from eval.gate import BASELINE, regressions
 from eval.metrics import summarise
 from eval.schema import read_jsonl
 
-MODES = ("dense", "lexical", "hybrid")
+MODES = ("dense", "lexical", "hybrid", "rerank")
 
 
-def retrieve(conn, mode: str, embedding, question: str, k: int):
+CANDIDATES = 30
+
+
+def retrieve(conn, mode: str, embedding, question: str, k: int, reranker=None):
     if mode == "dense":
         return dense(conn, embedding, k)
     if mode == "lexical":
         return lexical(conn, question, k)
-    return rrf([dense(conn, embedding, k), lexical(conn, question, k)])
+    fused = rrf([dense(conn, embedding, CANDIDATES), lexical(conn, question, CANDIDATES)])
+    if mode == "hybrid":
+        return fused[:k]
+    texts = dict(
+        conn.execute(
+            "select id, text from chunks where id = any(%s)", ([h.chunk_id for h in fused],)
+        ).fetchall()
+    )
+    return rerank(reranker, question, fused, texts, k)
 
 
 def chunk_key(conn, arxiv_id: str, ord_: int) -> str:
@@ -28,13 +39,13 @@ def chunk_key(conn, arxiv_id: str, ord_: int) -> str:
     return f"{arxiv_id}#{ord_}"
 
 
-def evaluate(conn, encode, items: list[dict], mode: str, k: int) -> dict:
+def evaluate(conn, encode, items: list[dict], mode: str, k: int, reranker=None) -> dict:
     by_chunk, by_paper = [], []
     ords = dict(
         conn.execute("select id, arxiv_id || '#' || ord from chunks").fetchall()
     )
     for it in items:
-        hits = retrieve(conn, mode, encode(it["question"]), it["question"], k)
+        hits = retrieve(conn, mode, encode(it["question"]), it["question"], k, reranker)
         # scored both ways: chunk-level is stricter, but ~20% of papers hold two
         # chunks, so retrieving the other half of the right abstract would count
         # as a miss there. Paper-level is the honest headline; both are reported.
@@ -68,9 +79,15 @@ def main():
     def encode(text: str):
         return model.encode(text, normalize_embeddings=True)
 
+    reranker = None
+    if args.mode == "rerank":
+        from sentence_transformers import CrossEncoder
+
+        reranker = CrossEncoder(settings.rerank_model)
+
     with psycopg.connect(settings.database_url) as conn:
         register_vector(conn)
-        scores = evaluate(conn, encode, items, args.mode, args.k)
+        scores = evaluate(conn, encode, items, args.mode, args.k, reranker)
 
     report = {"mode": args.mode, "k": args.k, **scores}
     print(json.dumps(report, indent=2))

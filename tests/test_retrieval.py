@@ -58,3 +58,45 @@ def test_papers_collapses_chunks_and_keeps_the_best_rank():
 
 def test_papers_of_nothing_is_empty():
     assert papers([]) == []
+
+
+class FakeCross:
+    """Scores a pair higher the more words the text shares with the query."""
+
+    def predict(self, pairs):
+        return [len(set(q.split()) & set(t.split())) for q, t in pairs]
+
+
+def test_rerank_reorders_by_cross_encoder_score():
+    from app.retrieval import rerank
+
+    hits = [h(1), h(2), h(3)]
+    texts = {1: "nothing alike", 2: "kv cache waste", 3: "cache"}
+
+    got = rerank(FakeCross(), "kv cache waste", hits, texts, k=3)
+
+    assert got == [h(2), h(3), h(1)]
+
+
+def test_rerank_truncates_to_k():
+    from app.retrieval import rerank
+
+    hits = [h(1), h(2), h(3)]
+    texts = {1: "a", 2: "a b", 3: "a b c"}
+
+    assert len(rerank(FakeCross(), "a b c", hits, texts, k=2)) == 2
+
+
+def test_rerank_skips_hits_with_no_text_available():
+    from app.retrieval import rerank
+
+    got = rerank(FakeCross(), "q", [h(1), h(2)], {2: "q"}, k=5)
+
+    assert got == [h(2)]
+
+
+def test_rerank_falls_back_when_no_text_at_all():
+    from app.retrieval import rerank
+
+    # nothing scoreable: return the retrieval order rather than nothing
+    assert rerank(FakeCross(), "q", [h(1), h(2)], {}, k=1) == [h(1)]

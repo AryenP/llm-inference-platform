@@ -59,3 +59,16 @@ def papers(hits: Iterable[Hit]) -> list[str]:
     for h in hits:
         seen.setdefault(h.arxiv_id, None)
     return list(seen)
+
+
+def rerank(model, query: str, hits: list[Hit], texts: dict[int, str], k: int) -> list[Hit]:
+    # A cross-encoder scores the query against each candidate jointly, which the
+    # bi-encoder cannot: it never sees the pair. The cost is that it runs over
+    # candidates rather than over the index, so it only reorders what retrieval
+    # already found — recall@k for k at or above the candidate count cannot improve.
+    scored = [(h, texts[h.chunk_id]) for h in hits if h.chunk_id in texts]
+    if not scored:
+        return hits[:k]
+    scores = model.predict([(query, t) for _, t in scored])
+    order = sorted(zip(scored, scores, strict=True), key=lambda x: -x[1])
+    return [h for (h, _), _ in order][:k]
