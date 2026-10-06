@@ -15,6 +15,8 @@ non-zero when a metric regresses.
 | Serving + gateway | working — `/query` returns a completion with per-request TTFT |
 | Corpus | 10,000 papers, 11,991 chunks, HNSW + GIN indexed |
 | Evaluation set | 150 pairs, **model-generated and automatically screened — not human-verified** |
+| Reranking | cross-encoder over fused candidates; recall@1 0.527 → 0.753 |
+| Faithfulness | scored on all 150, dense 0.948 vs reranked 0.957 |
 | Eval harness | built and tested — retrieval metrics, fusion, faithfulness, regression gate. Not yet run against a golden set |
 | Benchmark sweep | **done — 16 runs in `results.json`**, BF16 vs AWQ across input length and concurrency |
 
@@ -56,6 +58,39 @@ human-verified** — see [DECISIONS.md](DECISIONS.md) for what that costs.
 | lexical | 0.233 | 0.500 | 0.607 | 0.343 | 0.406 |
 | dense | 0.527 | 0.700 | 0.727 | 0.602 | 0.633 |
 | hybrid | 0.513 | 0.693 | 0.733 | 0.595 | 0.626 |
+
+### Better retrieval did not produce better answers
+
+Adding a `bge-reranker-v2-m3` cross-encoder over the fused candidates improved
+retrieval substantially:
+
+| | dense | reranked | change |
+|---|---|---|---|
+| recall@1 | 0.527 | **0.753** | +0.227 (+34 questions of 150) |
+| recall@5 | 0.700 | **0.827** | +0.127 (+19 questions) |
+| recall@10 | 0.727 | **0.867** | +0.140 (+21 questions) |
+| MRR | 0.602 | **0.788** | +0.186 |
+| **answer faithfulness** | **0.948** | **0.957** | **+0.009** |
+
+**A 43% relative gain in recall@1 moved answer faithfulness by nine thousandths.**
+Both arms scored all 150 questions with no judge failures.
+
+Two reasons, and they matter more than the headline:
+
+Faithfulness was already 0.948 before reranking, so there was almost no room to
+move. When the answer is constrained to the retrieved passages and the model is
+asked to say when the context does not contain the answer, it mostly complies
+regardless of which passages arrive.
+
+More importantly, **faithfulness measures grounding, not correctness**. An answer
+built faithfully from the wrong abstract scores just as well as one built from
+the right abstract. So the metric is close to blind to exactly the thing
+reranking improved. Measuring whether better retrieval produces better *answers*
+needs answer correctness against a reference, which this set does not yet score.
+
+This reproduces the result in *"Retrieval Improvements Do Not Guarantee Better
+Answers"* on a different corpus: the retrieval metric is not a proxy for the
+answer metric, and optimising the first does not automatically move the second.
 
 **Hybrid retrieval did not beat dense.** Reciprocal rank fusion of BM25 and dense
 moved recall@1 by -0.013, recall@5 by -0.007 and recall@10 by +0.007 — which at
