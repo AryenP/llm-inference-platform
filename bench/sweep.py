@@ -27,7 +27,7 @@ def wait_for(url: str, timeout_s: int = 600) -> bool:
     return False
 
 
-def start_server(model: str, port: int, gpu_util: float):
+def start_server(model: str, port: int, gpu_util: float, extra: list[str] | None = None):
     # The sweep owns the server so it can guarantee prefix caching is off. A warm
     # cache across repeated runs inflates throughput, and that is the single
     # easiest way to publish a number that cannot be reproduced.
@@ -38,6 +38,7 @@ def start_server(model: str, port: int, gpu_util: float):
             "--max-model-len", "8192",
             "--gpu-memory-utilization", str(gpu_util),
             "--no-enable-prefix-caching",
+            *(extra or []),
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -94,7 +95,7 @@ def pick(raw: dict, *names, default=None):
 
 def to_row(raw: dict, *, model: str, quantization: str, kernel: str, vllm_version: str,
            sampler: str, hardware: str, input_len: int, rate, warmups: int,
-           hourly: float, max_concurrency=None) -> dict:
+           hourly: float, max_concurrency=None, label="") -> dict:
     throughput = float(pick(raw, "request_throughput", default=0.0))
     return {
         "run_id": uuid.uuid4().hex[:8],
@@ -111,6 +112,7 @@ def to_row(raw: dict, *, model: str, quantization: str, kernel: str, vllm_versio
         "n_requests": int(pick(raw, "completed", "num_prompts", default=0)),
         "n_warmup_discarded": warmups,
         "prefix_cache": "disabled",
+        "label": label,
         "ttft_ms": {
             "p50": float(pick(raw, "p50_ttft_ms", "median_ttft_ms", default=0.0)),
             "p95": float(pick(raw, "p95_ttft_ms", default=0.0)),
@@ -138,6 +140,10 @@ def main():
     ap.add_argument("--concurrencies", type=int, nargs="+", default=[1, 8, 32, 64])
     ap.add_argument("--models", nargs="+", default=None)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--serve-arg", action="append", default=[],
+                    help="extra flag passed to vllm serve, repeatable")
+    ap.add_argument("--label", default="", help="tag recorded with each row")
+    ap.add_argument("--skip-throughput", action="store_true")
     args = ap.parse_args()
 
     vllm_version = subprocess.run(
@@ -158,7 +164,7 @@ def main():
             print(f"would sweep {model} ({quant})")
             continue
 
-        proc = start_server(model, args.port, args.gpu_util)
+        proc = start_server(model, args.port, args.gpu_util, args.serve_arg)
         try:
             # latency: low arrival rate, so ttft reflects compute not queueing
             for input_len in args.input_lens:
@@ -168,11 +174,12 @@ def main():
                     append(to_row(raw, model=model, quantization=quant, kernel=kernel,
                                   vllm_version=vllm_version, sampler="flashinfer",
                                   hardware=args.hardware, input_len=input_len, rate=rate,
-                                  warmups=args.warmups, hourly=args.hourly), args.out)
+                                  warmups=args.warmups, hourly=args.hourly,
+                                  label=args.label), args.out)
                     print(f"  recorded latency {quant} in={input_len} rate={rate}", flush=True)
 
             # throughput: a separate experiment, saturated rather than paced
-            for conc in args.concurrencies:
+            for conc in [] if args.skip_throughput else args.concurrencies:
                 raw = run_bench(model, args.port, 1024, 128, args.n, args.warmups,
                                 "inf", max_concurrency=conc, label=f"tput-{quant}-{conc}")
                 append(to_row(raw, model=model, quantization=quant, kernel=kernel,
