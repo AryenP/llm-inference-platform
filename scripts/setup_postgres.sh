@@ -50,7 +50,11 @@ if [ -n "$PGDATA" ]; then
   # the package starts a cluster in the default location; it would hold 5432
   pg_dropcluster --stop "$ver" main 2>/dev/null || true
 
-  install -d -o postgres -g postgres "$PGDATA"
+  # the persistent mount comes back with group/world bits set after a pod stop,
+  # and postgres refuses to start on anything looser than 0750
+  install -d -o postgres -g postgres -m 700 "$PGDATA"
+  chown -R postgres:postgres "$PGDATA"
+  chmod 700 "$PGDATA"
   if [ ! -f "$PGDATA/PG_VERSION" ]; then
     su postgres -c "$bin/initdb -D '$PGDATA' -E UTF8"
   fi
