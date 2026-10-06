@@ -12,6 +12,17 @@ jobs:
       - run: uv run ruff check .
       - run: uv run pytest -q
 
+  # The image is CPU-only by design, so a hosted runner can prove it builds.
+  # Without this the Dockerfile is unverified until someone deploys it.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t llm-inference-platform:ci .
+      - name: gateway imports inside the image
+        run: docker run --rm -e MODEL=/models/test llm-inference-platform:ci
+             uv run --no-sync python -c "from app.main import app; print('ok', len(app.routes))"
+
   # The eval needs a live vLLM endpoint and hosted runners have no GPU.
   # Set the EVAL_ENDPOINT repo variable to the GPU box, or move this to a
   # self-hosted runner on that box.
