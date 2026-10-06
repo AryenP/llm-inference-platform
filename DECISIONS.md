@@ -166,6 +166,26 @@ A related note lives in the metrics module: with one relevant document per
 question, **precision@k cannot exceed 1/k**. A precision@5 of 0.2 is arithmetic,
 not a verdict on the retriever, so recall and MRR carry the signal.
 
+## Pods must pin a CUDA floor
+
+A pod's host driver is whatever the scheduler happens to give you, and the
+wheels in `uv.lock` need a recent one. One draw came up with driver 550.163.01
+(CUDA 12.4) and torch could not see the GPU at all — `torch.cuda.is_available()`
+false, vLLM's engine core dead on arrival with a traceback that names none of
+this. An earlier draw on the same GPU type got CUDA 13.0 and worked.
+
+So pod creation passes `gpu.minCudaVersion: "12.8"`. The cost is narrower
+capacity — the floor took community cloud from available to empty, forcing the
+more expensive secure tier — but a pod that cannot run the stack is worth less
+than one that costs more.
+
+Related: host-local persistent storage pins a pod to one machine. When that
+machine's GPUs filled up, the stopped pod would not restart at all
+("not enough free GPUs on the host machine"), and its disk had to be abandoned.
+Network volumes avoid this, but no data center currently offers both L40S and
+network volumes. Everything on `/workspace` is therefore treated as rebuildable,
+and `scripts/` rebuilds it unattended in about fifteen minutes.
+
 ## Open
 
 **The benchmark sweep driver.** `vllm bench serve` produces the raw samples, but
