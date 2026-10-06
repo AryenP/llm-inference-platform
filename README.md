@@ -25,6 +25,19 @@ arrives without its configuration — hardware, model, quantization, kernel,
 sampler, request rate, warmup count, prefix-cache state, and concurrency on a
 saturation run. See [Measurement](#measurement).
 
+## What the numbers say
+
+Three findings, each with the run behind it below.
+
+1. **4-bit AWQ is strictly better than BF16 here.** TTFT 165 to 107 ms, ITL 28.8
+   to 10.3 ms, throughput 6.31 to 7.62 req/s, cost $0.048 to $0.040 per 1,000
+   queries. No measured downside at this model size.
+2. **Self-hosting beats a hosted API only above 1.70 requests/sec.** Below that
+   an idle GPU costs more than per-token pricing, and the API is the right call.
+3. **A 43% gain in retrieval recall@1 moved answer faithfulness by 0.009.**
+   Reranking found the right paper far more often and the answers barely changed,
+   because faithfulness scores grounding rather than correctness.
+
 ## Results
 
 One L40S 48GB, vLLM 0.28.0, FlashInfer sampler, prefix caching **disabled**,
@@ -47,17 +60,53 @@ Prefill is O(n) per layer, so a bend that sharp is a scheduling or chunked-prefi
 boundary rather than raw compute, and it is flagged for investigation before any
 of it is quoted as a prefill cost.
 
-### Retrieval quality
+### Throughput and cost at saturation
 
-150 questions over 12,000 arXiv abstracts (14,459 chunks), scored at the paper
-level. The evaluation set is **model-generated and automatically screened, not
-human-verified** — see [DECISIONS.md](DECISIONS.md) for what that costs.
+A separate experiment: unpaced, with concurrency capped.
 
-| retrieval | recall@1 | recall@5 | recall@10 | MRR | nDCG@10 |
-|---|---|---|---|---|---|
-| lexical | 0.233 | 0.500 | 0.607 | 0.343 | 0.406 |
-| dense | 0.527 | 0.700 | 0.727 | 0.602 | 0.633 |
-| hybrid | 0.513 | 0.693 | 0.733 | 0.595 | 0.626 |
+| concurrency | BF16 req/s | BF16 TTFT p95 | BF16 $/1k | AWQ req/s | AWQ TTFT p95 | AWQ $/1k |
+|---|---|---|---|---|---|---|
+| 1 | 0.35 | 98 ms | $0.8712 | 0.87 | 89 ms | $0.3497 |
+| 8 | 2.11 | 506 ms | $0.1435 | 4.25 | 557 ms | $0.0713 |
+| 32 | 4.91 | 2230 ms | $0.0616 | 6.97 | 2209 ms | $0.0435 |
+| 64 | 6.31 | 4946 ms | $0.0480 | 7.62 | 4934 ms | $0.0398 |
+
+**AWQ wins throughput and cost at every concurrency**, reaching 7.62 req/s
+against BF16's 6.31 and cutting cost per 1,000 queries from $0.0480 to $0.0398.
+Its ITL advantage is the larger effect — 10.28 ms against 28.79 ms at 1024
+tokens — which is what 4-bit weights buy on a decode path bound by memory
+bandwidth.
+
+### Against a hosted API
+
+The same workload (1,000 queries, 1,024 input and 128 output tokens) priced
+against hosted Qwen3-8B, using published rates read on **6 October 2026**:
+
+| | per 1,000 queries |
+|---|---|
+| Alibaba / OpenRouter / FlexAI ($0.117 in, $0.455 out per 1M) | $0.178 |
+| Fireworks ($0.200 / $0.200 per 1M) | $0.230 |
+| **Self-hosted, AWQ at concurrency 64** | **$0.040** |
+| Self-hosted, AWQ at concurrency 1 | $0.350 |
+
+**Self-hosting is 4.5x cheaper than the cheapest hosted option — but only under
+load.** At one request at a time it costs $0.350 per 1,000 queries, roughly
+double the API, because an idle GPU bills the same as a busy one.
+
+The break-even is **1.70 requests/sec sustained** at the $1.09/hr rate actually
+paid here. Below that, the API is cheaper and the operational burden is someone
+else's. That crossover is the number that decides whether self-hosting is worth
+doing at all, and it moves with the GPU rate: at the $0.79/hr community price it
+falls to 1.23 req/s.
+
+Prices move. Provider, rate and date are recorded here so the comparison can be
+rechecked rather than trusted.
+
+**The tail is the real story at high concurrency.** At 64 concurrent requests,
+TTFT p95 reaches ~4.9 s on both models while p50 stays near 720 ms. That gap is
+queueing, not compute, and it is the reason latency and throughput are run as
+separate experiments: a single averaged "latency" number here would describe
+neither.
 
 ### Better retrieval did not produce better answers
 
@@ -110,53 +159,17 @@ abstract contain all of its words. Fixed by OR-ing the lexemes. Had that gone
 unnoticed, "hybrid beats lexical" would have been published as a finding about
 retrieval rather than a finding about a broken query.
 
-### Throughput and cost at saturation
+### Retrieval quality
 
-A separate experiment: unpaced, with concurrency capped.
+150 questions over 12,000 arXiv abstracts (14,459 chunks), scored at the paper
+level. The evaluation set is **model-generated and automatically screened, not
+human-verified** — see [DECISIONS.md](DECISIONS.md) for what that costs.
 
-| concurrency | BF16 req/s | BF16 TTFT p95 | BF16 $/1k | AWQ req/s | AWQ TTFT p95 | AWQ $/1k |
-|---|---|---|---|---|---|---|
-| 1 | 0.35 | 98 ms | $0.8712 | 0.87 | 89 ms | $0.3497 |
-| 8 | 2.11 | 506 ms | $0.1435 | 4.25 | 557 ms | $0.0713 |
-| 32 | 4.91 | 2230 ms | $0.0616 | 6.97 | 2209 ms | $0.0435 |
-| 64 | 6.31 | 4946 ms | $0.0480 | 7.62 | 4934 ms | $0.0398 |
-
-**AWQ wins throughput and cost at every concurrency**, reaching 7.62 req/s
-against BF16's 6.31 and cutting cost per 1,000 queries from $0.0480 to $0.0398.
-Its ITL advantage is the larger effect — 10.28 ms against 28.79 ms at 1024
-tokens — which is what 4-bit weights buy on a decode path bound by memory
-bandwidth.
-
-### Against a hosted API
-
-The same workload (1,000 queries, 1,024 input and 128 output tokens) priced
-against hosted Qwen3-8B, using published rates read on **6 October 2026**:
-
-| | per 1,000 queries |
-|---|---|
-| Alibaba / OpenRouter / FlexAI ($0.117 in, $0.455 out per 1M) | $0.178 |
-| Fireworks ($0.200 / $0.200 per 1M) | $0.230 |
-| **Self-hosted, AWQ at concurrency 64** | **$0.040** |
-| Self-hosted, AWQ at concurrency 1 | $0.350 |
-
-**Self-hosting is 4.5x cheaper than the cheapest hosted option — but only under
-load.** At one request at a time it costs $0.350 per 1,000 queries, roughly
-double the API, because an idle GPU bills the same as a busy one.
-
-The break-even is **1.70 requests/sec sustained** at the $1.09/hr rate actually
-paid here. Below that, the API is cheaper and the operational burden is someone
-else's. That crossover is the number that decides whether self-hosting is worth
-doing at all, and it moves with the GPU rate: at the $0.79/hr community price it
-falls to 1.23 req/s.
-
-Prices move. Provider, rate and date are recorded here so the comparison can be
-rechecked rather than trusted.
-
-**The tail is the real story at high concurrency.** At 64 concurrent requests,
-TTFT p95 reaches ~4.9 s on both models while p50 stays near 720 ms. That gap is
-queueing, not compute, and it is the reason latency and throughput are run as
-separate experiments: a single averaged "latency" number here would describe
-neither.
+| retrieval | recall@1 | recall@5 | recall@10 | MRR | nDCG@10 |
+|---|---|---|---|---|---|
+| lexical | 0.233 | 0.500 | 0.607 | 0.343 | 0.406 |
+| dense | 0.527 | 0.700 | 0.727 | 0.602 | 0.633 |
+| hybrid | 0.513 | 0.693 | 0.733 | 0.595 | 0.626 |
 
 ## Architecture
 
