@@ -10,7 +10,9 @@ def build_llm(model: str | None = None):
     import openai
     from ragas.llms import llm_factory
 
-    client = openai.OpenAI(base_url=settings.vllm_url, api_key="not-used")
+    # async: ragas scores through ascore(), which calls agenerate() and refuses a
+    # synchronous client with a TypeError that surfaces as every question failing
+    client = openai.AsyncOpenAI(base_url=settings.vllm_url, api_key="not-used")
     return llm_factory(model or settings.model, provider="openai", client=client)
 
 
