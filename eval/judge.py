@@ -32,13 +32,20 @@ async def _score_one(metric, item: dict, contexts: Sequence[str], needs_contexts
         return exc
 
 
-async def _score_all(metric, items, contexts_by_id, needs_contexts):
-    return await asyncio.gather(
-        *(
-            _score_one(metric, it, contexts_by_id.get(it["cid"], []), needs_contexts)
-            for it in items
-        )
-    )
+# Each judgement is several LLM calls. Firing 150 at once buries the server and
+# every one comes back as a timeout, which the per-item catch then hides as
+# "n_failed: 150" with no clue why.
+MAX_IN_FLIGHT = 8
+
+
+async def _score_all(metric, items, contexts_by_id, needs_contexts, limit=MAX_IN_FLIGHT):
+    gate = asyncio.Semaphore(limit)
+
+    async def one(it):
+        async with gate:
+            return await _score_one(metric, it, contexts_by_id.get(it["cid"], []), needs_contexts)
+
+    return await asyncio.gather(*(one(it) for it in items))
 
 
 def summarise(scores: Sequence) -> dict:

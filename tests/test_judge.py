@@ -21,3 +21,31 @@ def test_all_failed_reports_no_mean_rather_than_zero():
 
 def test_nothing_scored_is_not_a_perfect_score():
     assert summarise([])["mean"] is None
+
+
+def test_scoring_never_runs_more_than_the_limit_at_once():
+    import asyncio
+
+    from eval import judge
+
+    peak = 0
+    live = 0
+
+    async def fake_score(metric, item, contexts, needs):
+        nonlocal peak, live
+        live += 1
+        peak = max(peak, live)
+        await asyncio.sleep(0)
+        live -= 1
+        return 1.0
+
+    original = judge._score_one
+    judge._score_one = fake_score
+    try:
+        items = [{"cid": str(i), "question": "q", "answer": "a"} for i in range(40)]
+        out = asyncio.run(judge._score_all(None, items, {}, True, limit=4))
+    finally:
+        judge._score_one = original
+
+    assert len(out) == 40
+    assert peak <= 4
