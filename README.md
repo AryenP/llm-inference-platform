@@ -45,6 +45,36 @@ Prefill is O(n) per layer, so a bend that sharp is a scheduling or chunked-prefi
 boundary rather than raw compute, and it is flagged for investigation before any
 of it is quoted as a prefill cost.
 
+### Retrieval quality
+
+150 questions over 12,000 arXiv abstracts (14,459 chunks), scored at the paper
+level. The evaluation set is **model-generated and automatically screened, not
+human-verified** — see [DECISIONS.md](DECISIONS.md) for what that costs.
+
+| retrieval | recall@1 | recall@5 | recall@10 | MRR | nDCG@10 |
+|---|---|---|---|---|---|
+| lexical | 0.233 | 0.500 | 0.607 | 0.343 | 0.406 |
+| dense | 0.527 | 0.700 | 0.727 | 0.602 | 0.633 |
+| hybrid | 0.513 | 0.693 | 0.733 | 0.595 | 0.626 |
+
+**Hybrid retrieval did not beat dense.** Reciprocal rank fusion of BM25 and dense
+moved recall@1 by -0.013, recall@5 by -0.007 and recall@10 by +0.007 — which at
+n=150 is **one or two questions in either direction**. That is noise, not an
+improvement, and it is reported as such rather than rounded into a win.
+
+The useful reading is that dense retrieval over bge-m3 already finds what BM25
+finds here, and fusing a weaker retriever into a stronger one mostly reshuffles
+the top ranks. Lexical alone reaches recall@5 of 0.500 against dense's 0.700, so
+it is not useless — it just adds nothing dense was missing on this corpus.
+
+A note on how this was nearly missed: the first lexical run scored 0.040, flat
+across every k. Flat across k means a retriever returning nothing rather than
+returning the wrong things, which is a bug signature. The cause was
+`plainto_tsquery` ANDing every term, so a natural-language question demanded one
+abstract contain all of its words. Fixed by OR-ing the lexemes. Had that gone
+unnoticed, "hybrid beats lexical" would have been published as a finding about
+retrieval rather than a finding about a broken query.
+
 ### Throughput and cost at saturation
 
 A separate experiment: unpaced, with concurrency capped.
