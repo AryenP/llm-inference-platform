@@ -1,0 +1,41 @@
+{
+  "dense": {
+    "n": 150,
+    "mrr": 0.6019,
+    "recall@1": 0.5267,
+    "precision@1": 0.5267,
+    "ndcg@1": 0.5267,
+    "recall@5": 0.7,
+    "precision@5": 0.14,
+    "ndcg@5": 0.6242,
+    "recall@10": 0.7267,
+    "precision@10": 0.0727,
+    "ndcg@10": 0.6328
+  },
+  "hybrid": {
+    "n": 150,
+    "mrr": 0.6057,
+    "recall@1": 0.5267,
+    "precision@1": 0.5267,
+    "ndcg@1": 0.5267,
+    "recall@5": 0.7133,
+    "precision@5": 0.1427,
+    "ndcg@5": 0.6293,
+    "recall@10": 0.7533,
+    "precision@10": 0.0753,
+    "ndcg@10": 0.6416
+  },
+  "rerank": {
+    "n": 150,
+    "mrr": 0.7876,
+    "recall@1": 0.7533,
+    "precision@1": 0.7533,
+    "ndcg@1": 0.7533,
+    "recall@5": 0.8267,
+    "precision@5": 0.1653,
+    "ndcg@5": 0.7931,
+    "recall@10": 0.8667,
+    "precision@10": 0.0867,
+    "ndcg@10": 0.8065
+  }
+}
