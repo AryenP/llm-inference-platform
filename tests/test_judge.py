@@ -9,7 +9,9 @@ def test_failures_are_counted_not_averaged_in_as_zero():
     # counting a failure as 0.0 would understate faithfulness and hide the failure
     got = summarise([1.0, RuntimeError("judge timed out"), 1.0])
 
-    assert got == {"n_scored": 2, "n_failed": 1, "mean": 1.0}
+    assert got["n_scored"] == 2
+    assert got["n_failed"] == 1
+    assert got["mean"] == 1.0
 
 
 def test_all_failed_reports_no_mean_rather_than_zero():
