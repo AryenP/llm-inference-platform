@@ -4,14 +4,5 @@ __pycache__/
 .env
 data/
 *.engine
-
-# local working docs — not for the public repo
-CLAUDE.md
-CLAUDE.local.md
-SPEC.md
-TODO.md
-progress.md
-.claude/
-
 eval/candidates.jsonl
 eval/rejected.jsonl
