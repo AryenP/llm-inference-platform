@@ -90,3 +90,15 @@ def test_append_refuses_an_underspecified_row_and_writes_nothing(tmp_path):
         append({**GOOD, "hardware": None}, path)
 
     assert not path.exists()
+
+
+def test_a_saturation_run_must_name_its_concurrency():
+    # two saturation rows at different concurrencies are otherwise identical
+    row = {**GOOD, "request_rate": -1, "max_concurrency": None}
+
+    assert any("max_concurrency" in p for p in problems(row))
+    assert problems({**row, "max_concurrency": 32}) == []
+
+
+def test_a_paced_run_needs_no_concurrency():
+    assert problems({**GOOD, "request_rate": 4.0, "max_concurrency": None}) == []

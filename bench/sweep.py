@@ -94,7 +94,7 @@ def pick(raw: dict, *names, default=None):
 
 def to_row(raw: dict, *, model: str, quantization: str, kernel: str, vllm_version: str,
            sampler: str, hardware: str, input_len: int, rate, warmups: int,
-           hourly: float) -> dict:
+           hourly: float, max_concurrency=None) -> dict:
     throughput = float(pick(raw, "request_throughput", default=0.0))
     return {
         "run_id": uuid.uuid4().hex[:8],
@@ -107,6 +107,7 @@ def to_row(raw: dict, *, model: str, quantization: str, kernel: str, vllm_versio
         "sampler": sampler,
         "input_len_tokens": input_len,
         "request_rate": float(rate) if rate != "inf" else -1.0,
+        "max_concurrency": max_concurrency,
         "n_requests": int(pick(raw, "completed", "num_prompts", default=0)),
         "n_warmup_discarded": warmups,
         "prefix_cache": "disabled",
@@ -177,7 +178,8 @@ def main():
                 append(to_row(raw, model=model, quantization=quant, kernel=kernel,
                               vllm_version=vllm_version, sampler="flashinfer",
                               hardware=args.hardware, input_len=1024, rate="inf",
-                              warmups=args.warmups, hourly=args.hourly), args.out)
+                              warmups=args.warmups, hourly=args.hourly,
+                              max_concurrency=conc), args.out)
                 print(f"  recorded throughput {quant} concurrency={conc}", flush=True)
         finally:
             stop_server(proc)

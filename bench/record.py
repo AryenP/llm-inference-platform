@@ -26,6 +26,9 @@ REQUIRED = (
     "cost_per_1k_usd",
 )
 
+# max_concurrency is deliberately not in REQUIRED: a paced run has none. But a
+# saturation run that omits it cannot be told apart from another, so it is
+# checked below against the request rate instead.
 PERCENTILES = ("p50", "p95")
 
 # A sweep run against a warm server measures the cache, not the engine. There is
@@ -50,6 +53,11 @@ def problems(row: dict) -> list[str]:
 
     if isinstance(row.get("n_warmup_discarded"), int) and row["n_warmup_discarded"] < 0:
         out.append("n_warmup_discarded is negative")
+
+    # a saturation run is identified by its concurrency; without it two rows at
+    # different concurrencies are indistinguishable
+    if row.get("request_rate") == -1 and row.get("max_concurrency") is None:
+        out.append("saturation run (request_rate -1) needs max_concurrency")
 
     return out
 

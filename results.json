@@ -23,7 +23,8 @@
         "p95": 28.969152364879847
       },
       "throughput_rps": 3.6373702117789612,
-      "cost_per_1k_usd": 0.083241
+      "cost_per_1k_usd": 0.083241,
+      "max_concurrency": null
     },
     {
       "run_id": "849e8eec",
@@ -48,7 +49,8 @@
         "p95": 51.815815130248666
       },
       "throughput_rps": 3.6277548536429274,
-      "cost_per_1k_usd": 0.083461
+      "cost_per_1k_usd": 0.083461,
+      "max_concurrency": null
     },
     {
       "run_id": "01393d39",
@@ -73,7 +75,8 @@
         "p95": 102.7590963523835
       },
       "throughput_rps": 3.6070213215351608,
-      "cost_per_1k_usd": 0.083941
+      "cost_per_1k_usd": 0.083941,
+      "max_concurrency": null
     },
     {
       "run_id": "32e75767",
@@ -98,7 +101,8 @@
         "p95": 224.18794888071716
       },
       "throughput_rps": 3.3143927443861894,
-      "cost_per_1k_usd": 0.091352
+      "cost_per_1k_usd": 0.091352,
+      "max_concurrency": null
     },
     {
       "run_id": "6ebb2bcd",
@@ -123,7 +127,8 @@
         "p95": 22.11606283672154
       },
       "throughput_rps": 0.3475372565381874,
-      "cost_per_1k_usd": 0.87121
+      "cost_per_1k_usd": 0.87121,
+      "max_concurrency": 1
     },
     {
       "run_id": "c72d070c",
@@ -148,7 +153,8 @@
         "p95": 25.77672698535025
       },
       "throughput_rps": 2.1094554705488338,
-      "cost_per_1k_usd": 0.143534
+      "cost_per_1k_usd": 0.143534,
+      "max_concurrency": 8
     },
     {
       "run_id": "f9f9077e",
@@ -173,7 +179,8 @@
         "p95": 164.92104157805443
       },
       "throughput_rps": 4.912035450429705,
-      "cost_per_1k_usd": 0.06164
+      "cost_per_1k_usd": 0.06164,
+      "max_concurrency": 32
     },
     {
       "run_id": "383ff985",
@@ -198,7 +205,8 @@
         "p95": 177.54635331220925
       },
       "throughput_rps": 6.307464140412498,
-      "cost_per_1k_usd": 0.048003
+      "cost_per_1k_usd": 0.048003,
+      "max_concurrency": 64
     },
     {
       "run_id": "8bfd159c",
@@ -223,7 +231,8 @@
         "p95": 10.82938630133867
       },
       "throughput_rps": 3.86027450790199,
-      "cost_per_1k_usd": 0.078434
+      "cost_per_1k_usd": 0.078434,
+      "max_concurrency": null
     },
     {
       "run_id": "3b4324e8",
@@ -248,7 +257,8 @@
         "p95": 22.70300388336181
       },
       "throughput_rps": 3.8545012165363945,
-      "cost_per_1k_usd": 0.078552
+      "cost_per_1k_usd": 0.078552,
+      "max_concurrency": null
     },
     {
       "run_id": "d426347a",
@@ -273,7 +283,8 @@
         "p95": 54.89892060868429
       },
       "throughput_rps": 3.8433024445956967,
-      "cost_per_1k_usd": 0.078781
+      "cost_per_1k_usd": 0.078781,
+      "max_concurrency": null
     },
     {
       "run_id": "ba9aa02e",
@@ -298,7 +309,8 @@
         "p95": 205.978810088709
       },
       "throughput_rps": 3.5850356477708227,
-      "cost_per_1k_usd": 0.084456
+      "cost_per_1k_usd": 0.084456,
+      "max_concurrency": null
     },
     {
       "run_id": "0502aa7e",
@@ -323,7 +335,8 @@
         "p95": 8.65783505141735
       },
       "throughput_rps": 0.8657603153451033,
-      "cost_per_1k_usd": 0.349725
+      "cost_per_1k_usd": 0.349725,
+      "max_concurrency": 1
     },
     {
       "run_id": "fbbb8e92",
@@ -348,7 +361,8 @@
         "p95": 10.331880860030651
       },
       "throughput_rps": 4.246764792690486,
-      "cost_per_1k_usd": 0.071296
+      "cost_per_1k_usd": 0.071296,
+      "max_concurrency": 8
     },
     {
       "run_id": "4174e060",
@@ -373,7 +387,8 @@
         "p95": 164.7458836901933
       },
       "throughput_rps": 6.965100018576736,
-      "cost_per_1k_usd": 0.043471
+      "cost_per_1k_usd": 0.043471,
+      "max_concurrency": 32
     },
     {
       "run_id": "28505809",
@@ -398,7 +413,8 @@
         "p95": 180.45797990635037
       },
       "throughput_rps": 7.616080970161961,
-      "cost_per_1k_usd": 0.039755
+      "cost_per_1k_usd": 0.039755,
+      "max_concurrency": 64
     }
   ],
   "schema": {
@@ -412,6 +428,7 @@
     "sampler": "flashinfer | torch \u2014 differs between WSL2 and the rented card",
     "input_len_tokens": "int",
     "request_rate": "float",
+    "max_concurrency": "int | null \u2014 set on saturation runs, null on paced ones",
     "n_requests": "int",
     "n_warmup_discarded": "int",
     "prefix_cache": "disabled | flushed",

@@ -16,12 +16,57 @@ non-zero when a metric regresses.
 | Corpus | 10,000 papers, 11,991 chunks, HNSW + GIN indexed |
 | Golden set | generation and review tooling built; 150 pairs not yet verified |
 | Eval harness | built and tested — retrieval metrics, fusion, faithfulness, regression gate. Not yet run against a golden set |
-| Benchmark sweep | statistics and the results recorder built; the sweep driver needs a live server |
+| Benchmark sweep | **done — 16 runs in `results.json`**, BF16 vs AWQ across input length and concurrency |
 
-**There are no performance numbers here yet**, and the recorder will not accept
-one that arrives without its configuration — hardware, model, quantization,
-kernel, sampler, request rate, run count and prefix-cache state are all required
-before a row can be written. See [Measurement](#measurement).
+Numbers below are measured, not estimated. The recorder refuses a row that
+arrives without its configuration — hardware, model, quantization, kernel,
+sampler, request rate, warmup count, prefix-cache state, and concurrency on a
+saturation run. See [Measurement](#measurement).
+
+## Results
+
+One L40S 48GB, vLLM 0.28.0, FlashInfer sampler, prefix caching **disabled**,
+10 warmup requests discarded, 120 requests per run.
+
+### Latency at a low arrival rate (4 req/s)
+
+Paced so TTFT reflects compute rather than queueing.
+
+| input tokens | BF16 TTFT p50 | BF16 TTFT p95 | BF16 ITL p50 | AWQ TTFT p50 | AWQ TTFT p95 | AWQ ITL p50 |
+|---|---|---|---|---|---|---|
+| 128 | 73.5 ms | 85.3 ms | 23.67 ms | 34.1 ms | 41.0 ms | 8.42 ms |
+| 512 | 104.7 ms | 160.2 ms | 25.11 ms | 61.8 ms | 96.3 ms | 8.99 ms |
+| 1024 | 164.7 ms | 350.1 ms | 28.79 ms | 107.2 ms | 239.9 ms | 10.28 ms |
+| 2048 | 761.4 ms | 1745.6 ms | 55.59 ms | 570.3 ms | 1490.7 ms | 29.77 ms |
+
+**TTFT is not linear in prompt length.** It roughly doubles from 128 to 1024
+tokens, then jumps 4.6x between 1024 and 2048 on BF16 (164.7 to 761.4 ms).
+Prefill is O(n) per layer, so a bend that sharp is a scheduling or chunked-prefill
+boundary rather than raw compute, and it is flagged for investigation before any
+of it is quoted as a prefill cost.
+
+### Throughput and cost at saturation
+
+A separate experiment: unpaced, with concurrency capped.
+
+| concurrency | BF16 req/s | BF16 TTFT p95 | BF16 $/1k | AWQ req/s | AWQ TTFT p95 | AWQ $/1k |
+|---|---|---|---|---|---|---|
+| 1 | 0.35 | 98 ms | $0.8712 | 0.87 | 89 ms | $0.3497 |
+| 8 | 2.11 | 506 ms | $0.1435 | 4.25 | 557 ms | $0.0713 |
+| 32 | 4.91 | 2230 ms | $0.0616 | 6.97 | 2209 ms | $0.0435 |
+| 64 | 6.31 | 4946 ms | $0.0480 | 7.62 | 4934 ms | $0.0398 |
+
+**AWQ wins throughput and cost at every concurrency**, reaching 7.62 req/s
+against BF16's 6.31 and cutting cost per 1,000 queries from $0.0480 to $0.0398.
+Its ITL advantage is the larger effect — 10.28 ms against 28.79 ms at 1024
+tokens — which is what 4-bit weights buy on a decode path bound by memory
+bandwidth.
+
+**The tail is the real story at high concurrency.** At 64 concurrent requests,
+TTFT p95 reaches ~4.9 s on both models while p50 stays near 720 ms. That gap is
+queueing, not compute, and it is the reason latency and throughput are run as
+separate experiments: a single averaged "latency" number here would describe
+neither.
 
 ## Architecture
 
