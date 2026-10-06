@@ -95,3 +95,31 @@ def test_pages_stops_at_the_limit():
 
     assert sum(len(p) for p in got) == 1
     assert len(client.calls) == 1
+
+
+def test_fetch_retries_a_rate_limit():
+    # 429 is the one 4xx worth retrying: the server is asking us to wait
+    client = FakeClient([(429, ""), (200, EMPTY)])
+    slept = []
+
+    fetch(client, {}, sleep=slept.append)
+
+    assert len(client.calls) == 2
+    assert slept == [3.0]
+
+
+def test_fetch_honours_retry_after_when_given():
+    class WithHeader(FakeClient):
+        def get(self, url, params=None):
+            self.calls.append(params or {})
+            status, body = self.responses.pop(0)
+            headers = {"retry-after": "30"} if status == 429 else {}
+            return httpx.Response(status, text=body, headers=headers,
+                                  request=httpx.Request("GET", url))
+
+    client = WithHeader([(429, ""), (200, EMPTY)])
+    slept = []
+
+    fetch(client, {}, sleep=slept.append)
+
+    assert slept == [30.0]

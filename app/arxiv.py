@@ -54,14 +54,27 @@ def parse_feed(xml: str) -> list[Paper]:
     return out
 
 
+def retry_after(r: httpx.Response, attempt: int) -> float:
+    # arxiv sometimes says how long to wait; its advice beats our backoff curve
+    raw = r.headers.get("retry-after")
+    if raw:
+        try:
+            return max(float(raw), DELAY_S)
+        except ValueError:
+            pass
+    return DELAY_S * 2**attempt
+
+
 def fetch(client, params, sleep=time.sleep) -> httpx.Response:
-    # 5xx only: a malformed query is not going to succeed on the sixteenth try
+    # Retry 5xx and 429. Every other 4xx fails immediately: a malformed query will
+    # not succeed on the sixteenth try, but a rate limit is the server asking us
+    # to wait rather than telling us we are wrong.
     for attempt in range(MAX_RETRIES):
         r = client.get(API, params=params)
-        if r.status_code < 500:
+        if r.status_code < 500 and r.status_code != 429:
             break
         if attempt < MAX_RETRIES - 1:
-            sleep(DELAY_S * 2**attempt)
+            sleep(retry_after(r, attempt))
     r.raise_for_status()
     return r
 
