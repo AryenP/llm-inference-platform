@@ -104,6 +104,20 @@ than in a paragraph of intent:
 `/query` measures TTFT around the stream rather than reconstructing it after the
 fact, so a buffered response cannot masquerade as a fast one.
 
+## Endpoints
+
+| | |
+|---|---|
+| `POST /query` | raw completion straight to vLLM, no retrieval — this is what the benchmarks drive, so the numbers describe the serving path alone |
+| `POST /rag` | retrieve, then answer from the retrieved context; returns the answer, the papers cited, and retrieval time separately from generation time |
+| `GET /health` | vLLM reachability, loaded models, and whether an embedder is present |
+
+`/rag` takes `mode` as `dense`, `lexical` or `hybrid`. Lexical needs no embedder;
+the other two return 503 when none is loaded, since bge-m3 and vLLM compete for
+the same card and running both means giving vLLM a lower memory fraction.
+Retrieval time is reported apart from TTFT because they are different costs with
+different fixes.
+
 ## Quickstart
 
 ```
