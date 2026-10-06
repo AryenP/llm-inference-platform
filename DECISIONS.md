@@ -138,7 +138,35 @@ stale text and a stale embedding — invisible to every row count, and still
 scoring against queries. `store_page` clears a paper's chunks before writing, in
 the same transaction.
 
-## Golden set: generated, then verified by hand
+## The evaluation set is screened, not hand-verified
+
+Candidates are drawn under a fixed `setseed`, so the same corpus reproduces the
+same sample. They are then screened automatically, in two stages.
+
+Mechanically: a question naming a distinctive capitalised term from its own
+paper's title is dropped. Roughly 23% of raw candidates did this — asking what
+"ReRound" or "FILT3R" does is answerable by exact string match, so lexical
+retrieval scores a free hit and the comparison between retrievers stops meaning
+anything.
+
+Then by model: each surviving pair is judged for whether it is answerable from
+the abstract alone, whether the answer is grounded in it, and whether the
+question describes what it asks about rather than relying on the reader knowing
+the paper.
+
+**What this set is not.** Nobody read these. A model generated them, a model
+screened them, and a model judges faithfulness against them — so correlated
+blind spots are possible and go unmeasured. A hand-verified set is the stronger
+instrument and the literature is right that it is what calibrates automated
+judges. Every metric computed here inherits that limitation, and the README says
+so rather than claiming otherwise.
+
+**What it deliberately does not screen on: retrievability.** Dropping questions
+whose source paper retrieval fails to surface would remove exactly the hard
+cases, and recall@k would climb for no reason other than having deleted its own
+counterexamples.
+
+## Superseded: golden set verified by hand
 
 Candidates are drawn under a fixed `setseed`, so the same corpus reproduces the
 same sample. Each candidate is auto-dropped before review if the question quotes

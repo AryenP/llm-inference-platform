@@ -14,7 +14,7 @@ non-zero when a metric regresses.
 |---|---|
 | Serving + gateway | working — `/query` returns a completion with per-request TTFT |
 | Corpus | 10,000 papers, 11,991 chunks, HNSW + GIN indexed |
-| Golden set | generation and review tooling built; 150 pairs not yet verified |
+| Evaluation set | 150 pairs, **model-generated and automatically screened — not human-verified** |
 | Eval harness | built and tested — retrieval metrics, fusion, faithfulness, regression gate. Not yet run against a golden set |
 | Benchmark sweep | **done — 16 runs in `results.json`**, BF16 vs AWQ across input length and concurrency |
 
