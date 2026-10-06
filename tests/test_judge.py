@@ -49,3 +49,14 @@ def test_scoring_never_runs_more_than_the_limit_at_once():
 
     assert len(out) == 40
     assert peak <= 4
+
+
+def test_summarise_carries_the_first_error():
+    got = summarise([RuntimeError("judge timed out"), 1.0])
+
+    assert "RuntimeError" in got["first_error"]
+    assert "timed out" in got["first_error"]
+
+
+def test_summarise_has_no_error_field_when_all_scored():
+    assert "first_error" not in summarise([1.0, 0.5])

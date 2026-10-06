@@ -50,14 +50,18 @@ async def _score_all(metric, items, contexts_by_id, needs_contexts, limit=MAX_IN
 
 def summarise(scores: Sequence) -> dict:
     ok = [s for s in scores if isinstance(s, float)]
-    failed = len(scores) - len(ok)
+    bad = [s for s in scores if not isinstance(s, float)]
     # a mean over the scored subset, with the unscored count beside it — averaging
-    # failures in as zeros would understate the metric and hide that they happened
-    return {
+    # failures in as zeros would understate the metric and hide that they happened.
+    # The first error travels with it: "n_failed: 150" alone says nothing about why.
+    out = {
         "n_scored": len(ok),
-        "n_failed": failed,
+        "n_failed": len(bad),
         "mean": sum(ok) / len(ok) if ok else None,
     }
+    if bad:
+        out["first_error"] = f"{type(bad[0]).__name__}: {str(bad[0])[:300]}"
+    return out
 
 
 def faithfulness(items, contexts_by_id, llm=None) -> dict:

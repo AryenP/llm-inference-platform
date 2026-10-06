@@ -66,6 +66,15 @@ def main():
             if i % 25 == 0:
                 print(f"  answered {i}/{len(items)}", flush=True)
 
+    # the retrieval models are done; hand their VRAM back before the judge runs
+    del embedder, reranker
+    import gc
+
+    import torch
+
+    gc.collect()
+    torch.cuda.empty_cache()
+
     scores = faithfulness(answered, ctx_by_id, llm=build_llm())
     report = {"mode": args.mode, "k": args.k, "n_answered": len(answered), "faithfulness": scores}
     print(json.dumps(report, indent=2))
