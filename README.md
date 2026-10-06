@@ -92,6 +92,31 @@ Its ITL advantage is the larger effect — 10.28 ms against 28.79 ms at 1024
 tokens — which is what 4-bit weights buy on a decode path bound by memory
 bandwidth.
 
+### Against a hosted API
+
+The same workload (1,000 queries, 1,024 input and 128 output tokens) priced
+against hosted Qwen3-8B, using published rates read on **6 October 2026**:
+
+| | per 1,000 queries |
+|---|---|
+| Alibaba / OpenRouter / FlexAI ($0.117 in, $0.455 out per 1M) | $0.178 |
+| Fireworks ($0.200 / $0.200 per 1M) | $0.230 |
+| **Self-hosted, AWQ at concurrency 64** | **$0.040** |
+| Self-hosted, AWQ at concurrency 1 | $0.350 |
+
+**Self-hosting is 4.5x cheaper than the cheapest hosted option — but only under
+load.** At one request at a time it costs $0.350 per 1,000 queries, roughly
+double the API, because an idle GPU bills the same as a busy one.
+
+The break-even is **1.70 requests/sec sustained** at the $1.09/hr rate actually
+paid here. Below that, the API is cheaper and the operational burden is someone
+else's. That crossover is the number that decides whether self-hosting is worth
+doing at all, and it moves with the GPU rate: at the $0.79/hr community price it
+falls to 1.23 req/s.
+
+Prices move. Provider, rate and date are recorded here so the comparison can be
+rechecked rather than trusted.
+
 **The tail is the real story at high concurrency.** At 64 concurrent requests,
 TTFT p95 reaches ~4.9 s on both models while p50 stays near 720 ms. That gap is
 queueing, not compute, and it is the reason latency and throughput are run as
