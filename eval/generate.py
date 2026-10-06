@@ -34,7 +34,7 @@ ABSTRACT
 def sample_chunks(conn, n: int, seed: float):
     conn.execute("select setseed(%s)", (seed,))
     return conn.execute(
-        """select c.id, c.arxiv_id, c.text, p.title
+        """select c.id, c.arxiv_id, c.ord, c.text, p.title
              from chunks c join papers p using (arxiv_id)
             where c.ord = 0
             order by random() limit %s""",
@@ -90,7 +90,7 @@ def main():
         rows = sample_chunks(conn, args.n, args.seed)
         print(f"sampled {len(rows)} chunks", flush=True)
 
-        for i, (chunk_id, arxiv_id, text, title) in enumerate(rows, 1):
+        for i, (chunk_id, arxiv_id, ord_, text, title) in enumerate(rows, 1):
             got = ask(client, settings.model, text)
             if not got:
                 dropped += 1
@@ -109,6 +109,7 @@ def main():
                     answer=got["answer"].strip(),
                     arxiv_id=arxiv_id,
                     chunk_id=chunk_id,
+                    ord=ord_,
                     source=text,
                     title=title,
                 )

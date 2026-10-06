@@ -10,6 +10,7 @@ class Candidate:
     answer: str
     arxiv_id: str
     chunk_id: int
+    ord: int
     source: str
     title: str
     notes: list[str] = field(default_factory=list)

@@ -22,14 +22,24 @@ def retrieve(conn, mode: str, embedding, question: str, k: int):
     return rrf([dense(conn, embedding, k), lexical(conn, question, k)])
 
 
+def chunk_key(conn, arxiv_id: str, ord_: int) -> str:
+    # (arxiv_id, ord) is stable across re-ingests; the bigserial id is not, so a
+    # rebuilt corpus would silently score every question as a miss
+    return f"{arxiv_id}#{ord_}"
+
+
 def evaluate(conn, encode, items: list[dict], mode: str, k: int) -> dict:
     by_chunk, by_paper = [], []
+    ords = dict(
+        conn.execute("select id, arxiv_id || '#' || ord from chunks").fetchall()
+    )
     for it in items:
         hits = retrieve(conn, mode, encode(it["question"]), it["question"], k)
         # scored both ways: chunk-level is stricter, but ~20% of papers hold two
         # chunks, so retrieving the other half of the right abstract would count
         # as a miss there. Paper-level is the honest headline; both are reported.
-        by_chunk.append(([str(h.chunk_id) for h in hits], {str(it["chunk_id"])}))
+        gold = chunk_key(conn, it["arxiv_id"], it.get("ord", 0))
+        by_chunk.append(([ords.get(h.chunk_id, "") for h in hits], {gold}))
         by_paper.append((papers(hits), {it["arxiv_id"]}))
     return {"chunk": summarise(by_chunk), "paper": summarise(by_paper)}
 

@@ -12,6 +12,8 @@ class FakeConn:
 
     def execute(self, sql, params=None):
         self.queries.append(sql)
+        if "arxiv_id || " in sql:
+            return _Result([(c, f"{a}#0") for c, a in self.dense_rows])
         rows = self.lexical_rows if "tsv" in sql else self.dense_rows
         return _Result(rows)
 
@@ -28,8 +30,9 @@ def encode(text):
     return [0.0] * 4
 
 
-def item(chunk_id, arxiv_id):
-    return {"question": "what reduces kv cache waste", "chunk_id": chunk_id, "arxiv_id": arxiv_id}
+def item(chunk_id, arxiv_id, ord_=0):
+    return {"question": "what reduces kv cache waste", "chunk_id": chunk_id,
+            "arxiv_id": arxiv_id, "ord": ord_}
 
 
 def test_hybrid_scores_both_granularities():
@@ -45,9 +48,9 @@ def test_hybrid_scores_both_granularities():
 
 def test_paper_level_credits_the_other_chunk_of_the_right_paper():
     conn = FakeConn(DENSE, [])
-    # gold is chunk 99, which was never retrieved — but it belongs to p2, and
-    # chunk 22 of p2 was. Chunk-level misses; paper-level counts it.
-    got = evaluate(conn, encode, [item(99, "p2")], "dense", k=10)
+    # gold is ord 1 of p2, never retrieved — but ord 0 of p2 was. Chunk-level
+    # misses; paper-level counts it.
+    got = evaluate(conn, encode, [item(99, "p2", ord_=1)], "dense", k=10)
 
     assert got["chunk"]["recall@5"] == 0.0
     assert got["paper"]["recall@5"] == 1.0
@@ -66,7 +69,9 @@ def test_lexical_mode_never_runs_the_vector_query():
 
     evaluate(conn, encode, [item(33, "p3")], "lexical", k=10)
 
-    assert all("tsv" in q for q in conn.queries)
+    # the key lookup is not a retrieval query, so assert on the vector path
+    assert not any("embedding <=>" in q for q in conn.queries)
+    assert any("tsv" in q for q in conn.queries)
 
 
 def test_a_total_miss_scores_zero_everywhere():
