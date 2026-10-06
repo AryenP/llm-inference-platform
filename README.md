@@ -108,6 +108,18 @@ queueing, not compute, and it is the reason latency and throughput are run as
 separate experiments: a single averaged "latency" number here would describe
 neither.
 
+### Retrieval quality
+
+150 questions over 12,000 arXiv abstracts (14,459 chunks), scored at the paper
+level. The evaluation set is **model-generated and automatically screened, not
+human-verified** — see [DECISIONS.md](DECISIONS.md) for what that costs.
+
+| retrieval | recall@1 | recall@5 | recall@10 | MRR | nDCG@10 |
+|---|---|---|---|---|---|
+| lexical | 0.233 | 0.500 | 0.607 | 0.343 | 0.406 |
+| dense | 0.527 | 0.700 | 0.727 | 0.602 | 0.633 |
+| hybrid | 0.513 | 0.693 | 0.733 | 0.595 | 0.626 |
+
 ### Better retrieval did not produce better answers
 
 Adding a `bge-reranker-v2-m3` cross-encoder over the fused candidates improved
@@ -158,18 +170,6 @@ returning the wrong things, which is a bug signature. The cause was
 abstract contain all of its words. Fixed by OR-ing the lexemes. Had that gone
 unnoticed, "hybrid beats lexical" would have been published as a finding about
 retrieval rather than a finding about a broken query.
-
-### Retrieval quality
-
-150 questions over 12,000 arXiv abstracts (14,459 chunks), scored at the paper
-level. The evaluation set is **model-generated and automatically screened, not
-human-verified** — see [DECISIONS.md](DECISIONS.md) for what that costs.
-
-| retrieval | recall@1 | recall@5 | recall@10 | MRR | nDCG@10 |
-|---|---|---|---|---|---|
-| lexical | 0.233 | 0.500 | 0.607 | 0.343 | 0.406 |
-| dense | 0.527 | 0.700 | 0.727 | 0.602 | 0.633 |
-| hybrid | 0.513 | 0.693 | 0.733 | 0.595 | 0.626 |
 
 ## Architecture
 
