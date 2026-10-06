@@ -166,6 +166,20 @@ A related note lives in the metrics module: with one relevant document per
 question, **precision@k cannot exceed 1/k**. A precision@5 of 0.2 is arithmetic,
 not a verdict on the retriever, so recall and MRR carry the signal.
 
+## FlashInfer needs nvcc and ninja on the box
+
+vLLM's sampler is FlashInfer, which JIT-compiles its kernels the first time it
+samples — during startup warmup, not at first request. That needs `nvcc` and
+`ninja`. Pod images carry the CUDA toolkit but leave it off `PATH`, and ninja is
+not installed at all; the failure arrives as `Engine core initialization failed`
+with the real cause (`FileNotFoundError: 'ninja'`) buried many frames up.
+
+`init.sh` now puts `/usr/local/cuda/bin` on `PATH` and sets `CUDA_HOME` when the
+toolkit is present, and `ninja` is part of the `serve` extra. The alternative —
+`VLLM_USE_FLASHINFER_SAMPLER=0`, which is what a machine with no toolkit has to
+do — works but changes the sampler, and a sampler that differs between the
+machine under test and a production deployment is a difference worth not having.
+
 ## Pods must pin a CUDA floor
 
 A pod's host driver is whatever the scheduler happens to give you, and the

@@ -3,6 +3,14 @@ set -euo pipefail
 
 [ -f .env ] && set -a && . ./.env && set +a
 
+# FlashInfer JIT-compiles its sampling kernels on first use and needs nvcc plus
+# ninja. Pod images ship the toolkit but leave it off PATH, and the failure
+# surfaces as an opaque "Engine core initialization failed".
+if [ -d /usr/local/cuda/bin ]; then
+  export CUDA_HOME="${CUDA_HOME:-/usr/local/cuda}"
+  export PATH="$CUDA_HOME/bin:$PATH"
+fi
+
 # vllm lands on PATH when installed with --system (the pod), or inside .venv when
 # installed with uv sync --extra serve (WSL, where PEP 668 blocks --system)
 vllm_cmd() {

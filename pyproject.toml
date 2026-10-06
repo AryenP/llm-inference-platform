@@ -14,7 +14,7 @@ dependencies = [
 # vllm is linux/CUDA only — installing it on the laptop will fail.
 # On the GPU box: uv sync --extra serve
 [project.optional-dependencies]
-serve = ["vllm"]
+serve = ["vllm", "ninja"]
 # langchain-community 0.4 dropped the module ragas 0.4.3 imports at load time
 eval = ["ragas>=0.4", "langchain-community<0.4", "openai"]
 ingest = ["sentence-transformers"]

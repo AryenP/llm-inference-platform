@@ -1596,6 +1596,7 @@ ingest = [
     { name = "sentence-transformers" },
 ]
 serve = [
+    { name = "ninja" },
     { name = "vllm" },
 ]
 
@@ -1610,6 +1611,7 @@ requires-dist = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "langchain-community", marker = "extra == 'eval'", specifier = "<0.4" },
+    { name = "ninja", marker = "extra == 'serve'" },
     { name = "openai", marker = "extra == 'eval'" },
     { name = "pgvector" },
     { name = "psycopg", extras = ["binary"] },
