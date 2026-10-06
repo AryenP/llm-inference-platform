@@ -46,6 +46,7 @@ def main():
         reranker = CrossEncoder(settings.rerank_model)
 
     answered, ctx_by_id = [], {}
+    similarity, found_gold = [], []
     with (
         psycopg.connect(settings.database_url) as conn,
         httpx.Client(base_url=settings.vllm_url, timeout=300) as client,
@@ -63,6 +64,16 @@ def main():
             # the judge scores the generated answer, not the reference one
             answered.append({"cid": it["cid"], "question": it["question"], "answer": answer})
             ctx_by_id[it["cid"]] = [text for _, text in blocks]
+
+            # Faithfulness asks whether the answer follows from the context it was
+            # given, which is blind to retrieving the wrong context entirely. This
+            # compares the answer against the reference one instead, so it moves
+            # when retrieval changes which paper the answer came from.
+            gen_vec, ref_vec = embedder.encode(
+                [answer, it["answer"]], normalize_embeddings=True
+            )
+            similarity.append(float(gen_vec @ ref_vec))
+            found_gold.append(it["arxiv_id"] in {aid for aid, _ in blocks})
             if i % 25 == 0:
                 print(f"  answered {i}/{len(items)}", flush=True)
 
@@ -76,7 +87,23 @@ def main():
     torch.cuda.empty_cache()
 
     scores = faithfulness(answered, ctx_by_id, llm=build_llm())
-    report = {"mode": args.mode, "k": args.k, "n_answered": len(answered), "faithfulness": scores}
+    hit = [s for s, f in zip(similarity, found_gold, strict=True) if f]
+    miss = [s for s, f in zip(similarity, found_gold, strict=True) if not f]
+    report = {
+        "mode": args.mode,
+        "k": args.k,
+        "n_answered": len(answered),
+        "faithfulness": scores,
+        "answer_similarity": {
+            "mean": sum(similarity) / len(similarity) if similarity else None,
+            # split by whether the gold paper was actually retrieved: if better
+            # retrieval helps answers at all, the gap between these two is where
+            # it has to show up
+            "when_gold_retrieved": sum(hit) / len(hit) if hit else None,
+            "when_gold_missed": sum(miss) / len(miss) if miss else None,
+            "n_gold_retrieved": len(hit),
+        },
+    }
     print(json.dumps(report, indent=2))
     if args.out:
         args.out.write_text(json.dumps(report, indent=2) + "\n")
