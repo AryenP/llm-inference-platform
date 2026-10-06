@@ -126,6 +126,16 @@ uv sync --extra serve           # where PEP 668 blocks --system
 
 `init.sh` uses whichever is present.
 
+## Packaging
+
+```
+MODEL=/models/qwen3-8b VLLM_URL=http://<gpu-host>:8000/v1 docker compose up --build
+```
+
+Brings up Postgres with pgvector and the gateway. vLLM is deliberately not a
+service here — it needs a GPU, and including it would imply the stack deploys
+somewhere it cannot actually serve.
+
 ## Layout
 
 ```

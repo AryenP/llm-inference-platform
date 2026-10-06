@@ -1,5 +1,6 @@
-# Week 7 packaging target. Not used on the pod — RunPod containers have no docker
-# daemon, so postgres is installed natively there by scripts/setup_postgres.sh.
+# The gateway and its database. vLLM runs separately on a GPU host and is
+# reached over VLLM_URL — putting it here would imply this stack is deployable
+# on a machine that cannot serve the model.
 services:
   postgres:
     image: pgvector/pgvector:pg17
@@ -16,6 +17,20 @@ services:
       test: ["CMD-SHELL", "pg_isready -U rag"]
       interval: 5s
       retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      MODEL: ${MODEL:?set MODEL}
+      VLLM_URL: ${VLLM_URL:-http://host.docker.internal:8000/v1}
+      DATABASE_URL: postgresql://rag:rag@postgres:5432/rag
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   pgdata:
