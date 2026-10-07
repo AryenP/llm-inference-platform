@@ -1,0 +1,22 @@
+{
+  "dense": {
+    "n_answered": 150,
+    "faithfulness": 0.9416,
+    "answer_similarity": {
+      "mean": 0.7344,
+      "when_gold_retrieved": 0.7952,
+      "when_gold_missed": 0.5925,
+      "n_gold_retrieved": 105
+    }
+  },
+  "rerank": {
+    "n_answered": 150,
+    "faithfulness": 0.962,
+    "answer_similarity": {
+      "mean": 0.7634,
+      "when_gold_retrieved": 0.7973,
+      "when_gold_missed": 0.6018,
+      "n_gold_retrieved": 124
+    }
+  }
+}

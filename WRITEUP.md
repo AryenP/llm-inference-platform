@@ -80,10 +80,18 @@ well as one built from the right paper. The metric is close to blind to exactly
 what reranking fixed.
 
 Scoring the generated answer against the reference answer instead shows the
-effect the faithfulness number hides. On the dense run, answers scored **0.795**
-against the reference when the correct paper was retrieved and **0.593** when it
-was not — a gap of 0.20 across 150 questions. Retrieval quality clearly does
+effect the faithfulness number hides. Answers scored **0.795** against the reference when the correct
+paper was retrieved and **0.593** when it was not — a gap of 0.20 across 150
+questions. Retrieval quality clearly does
 drive answer quality; faithfulness just is not the instrument that detects it.
+
+Running both arms and splitting by whether the gold paper was retrieved shows
+where the gain lives. Reranking moved 19 questions into the retrieved bucket
+(105 to 124 of 150) and lifted overall similarity from 0.734 to 0.763. But the
+conditional means barely changed: 0.795 to 0.797 when the right paper was found,
+0.593 to 0.602 when it was not. Decomposed, **89% of the answer-quality gain is
+the mix shift and 11% is better answering**. The reranker did not make the model
+a better writer. It changed which paper the model wrote from.
 
 This reproduces the finding in *"Retrieval Improvements Do Not Guarantee Better
 Answers"* on a different corpus, with a specific mechanism rather than a general

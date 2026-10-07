@@ -34,9 +34,10 @@ Three findings, each with the run behind it below.
    queries. No measured downside at this model size.
 2. **Self-hosting beats a hosted API only above 1.70 requests/sec.** Below that
    an idle GPU costs more than per-token pricing, and the API is the right call.
-3. **A 43% gain in retrieval recall@1 moved answer faithfulness by 0.009.**
-   Reranking found the right paper far more often and the answers barely changed,
-   because faithfulness scores grounding rather than correctness.
+3. **A 43% gain in retrieval recall@1 moved answer faithfulness by 0.009** — but
+   scoring answers against a reference instead shows a real +0.029, of which
+   **89% comes purely from retrieving the right paper more often** rather than
+   from answering better. Faithfulness scores grounding, so it cannot see this.
 
 ## Results
 
@@ -152,6 +153,32 @@ needs answer correctness against a reference, which this set does not yet score.
 This reproduces the result in *"Retrieval Improvements Do Not Guarantee Better
 Answers"* on a different corpus: the retrieval metric is not a proxy for the
 answer metric, and optimising the first does not automatically move the second.
+
+### Where the answer gain actually comes from
+
+Faithfulness is the wrong instrument, so answers were also scored against the
+reference answer, split by whether the correct paper was retrieved at all:
+
+| | gold retrieved | similarity when found | when missed | overall | faithfulness |
+|---|---|---|---|---|---|
+| dense | 105 / 150 | 0.795 | 0.593 | 0.734 | 0.942 |
+| reranked | **124 / 150** | 0.797 | 0.602 | **0.763** | 0.962 |
+
+Decomposing the +0.029 overall gain:
+
+- **+0.026 (89%)** from retrieving the correct paper more often — 19 more
+  questions moved out of the missed bucket
+- **+0.003 (11%)** from answering better given the same retrieval
+
+**The conditional means barely move.** Given the right paper, answers score 0.795
+before reranking and 0.797 after. Given the wrong paper, 0.593 and 0.602. The
+reranker did not make the model a better writer; it changed which paper the model
+was writing from, and that is where all of the gain lives.
+
+That is also why faithfulness missed it. Faithfulness asks whether the answer
+follows from whatever context arrived, and by that measure an answer grounded in
+the wrong abstract is a good answer. The 0.20 gap between the found and missed
+buckets is the effect the faithfulness number averages away.
 
 **Hybrid retrieval did not beat dense.** Reciprocal rank fusion of BM25 and dense
 moved recall@1 by -0.013, recall@5 by -0.007 and recall@10 by +0.007 — which at
