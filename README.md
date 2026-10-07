@@ -55,11 +55,34 @@ Paced so TTFT reflects compute rather than queueing.
 | 1024 | 164.7 ms | 350.1 ms | 28.79 ms | 107.2 ms | 239.9 ms | 10.28 ms |
 | 2048 | 761.4 ms | 1745.6 ms | 55.59 ms | 570.3 ms | 1490.7 ms | 29.77 ms |
 
-**TTFT is not linear in prompt length.** It roughly doubles from 128 to 1024
-tokens, then jumps 4.6x between 1024 and 2048 on BF16 (164.7 to 761.4 ms).
-Prefill is O(n) per layer, so a bend that sharp is a scheduling or chunked-prefill
-boundary rather than raw compute, and it is flagged for investigation before any
-of it is quoted as a prefill cost.
+**TTFT looked non-linear in prompt length, and the cause was our own load.**
+At 4 req/s it roughly doubles from 128 to 1024 tokens then jumps 4.6x between
+1024 and 2048. Prefill is O(n) per layer, so a bend that sharp needed explaining
+before any of it was quoted as a prefill cost. Three arms, 40-60 requests each:
+
+| input tokens | 4 req/s | 4 req/s, chunked prefill off | 1 req/s |
+|---|---|---|---|
+| 1024 | 152 ms | 159 ms | 141 ms |
+| 1536 | 225 ms | 221 ms | 185 ms |
+| 2048 | 457 ms | 405 ms | 243 ms |
+| 2560 | 696 ms | 677 ms | 285 ms |
+| 3072 | 1210 ms | 1115 ms | 340 ms |
+
+Normalised to per-token cost against the 1024 baseline, the 4 req/s arm is flat
+to 1792 (x1.00, 0.98, 0.99, 1.03) then climbs (x1.50, 1.83, 2.66). **The 1 req/s
+arm never climbs at all** (x1.00, 0.88, 0.87, 0.81, 0.81) — slightly sublinear,
+since longer prefills use the GPU more efficiently.
+
+Disabling chunked prefill changed nothing, ruling out the scheduler explanation
+we first suspected. **The bend is queueing.** Above roughly 1792 tokens a 4 req/s
+arrival rate exceeds what the server sustains, the queue grows, and TTFT absorbs
+the wait. At 3072 tokens the same work costs 340 ms unqueued and 1210 ms at 4
+req/s — 3.6x, none of it compute.
+
+This is the trap the methodology section exists to avoid, caught in our own data:
+a latency measurement taken at a rate the server cannot sustain is a measurement
+of the queue. Prefill itself is linear in prompt length, as O(n) per layer
+predicts.
 
 ### Throughput and cost at saturation
 

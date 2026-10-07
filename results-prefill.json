@@ -1,0 +1,490 @@
+{
+  "runs": [
+    {
+      "run_id": "d6e75193",
+      "timestamp": "2026-10-07T00:03:48.916844+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1024,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-on",
+      "ttft_ms": {
+        "p50": 151.90795296803117,
+        "p95": 336.4692588336766
+      },
+      "itl_ms": {
+        "p50": 27.597890235483646,
+        "p95": 99.92354437708852
+      },
+      "throughput_rps": 3.219991269471357,
+      "cost_per_1k_usd": 0.094031
+    },
+    {
+      "run_id": "664490ec",
+      "timestamp": "2026-10-07T00:04:21.405350+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1280,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-on",
+      "ttft_ms": {
+        "p50": 186.9273530319333,
+        "p95": 394.6192905772476
+      },
+      "itl_ms": {
+        "p50": 29.043061193078756,
+        "p95": 119.53506316058329
+      },
+      "throughput_rps": 3.166646661114485,
+      "cost_per_1k_usd": 0.095615
+    },
+    {
+      "run_id": "fc4b9a23",
+      "timestamp": "2026-10-07T00:04:54.225944+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1536,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-on",
+      "ttft_ms": {
+        "p50": 224.75313674658537,
+        "p95": 539.4852773286401
+      },
+      "itl_ms": {
+        "p50": 31.04890463873744,
+        "p95": 145.09661025367677
+      },
+      "throughput_rps": 3.0908211256205185,
+      "cost_per_1k_usd": 0.09796
+    },
+    {
+      "run_id": "c104326e",
+      "timestamp": "2026-10-07T00:05:27.968403+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1792,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-on",
+      "ttft_ms": {
+        "p50": 273.8167503848672,
+        "p95": 632.9112354665995
+      },
+      "itl_ms": {
+        "p50": 34.049142152071,
+        "p95": 168.16928540356457
+      },
+      "throughput_rps": 3.0060002228597646,
+      "cost_per_1k_usd": 0.100724
+    },
+    {
+      "run_id": "da9b990a",
+      "timestamp": "2026-10-07T00:06:02.865213+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 2048,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-on",
+      "ttft_ms": {
+        "p50": 456.52715489268303,
+        "p95": 951.2207286898047
+      },
+      "itl_ms": {
+        "p50": 40.566252544522285,
+        "p95": 182.14613250456748
+      },
+      "throughput_rps": 2.9154966487955405,
+      "cost_per_1k_usd": 0.103851
+    },
+    {
+      "run_id": "df28226e",
+      "timestamp": "2026-10-07T00:06:39.866668+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 2560,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-on",
+      "ttft_ms": {
+        "p50": 695.5525251105428,
+        "p95": 1804.2749261483548
+      },
+      "itl_ms": {
+        "p50": 49.09616196528077,
+        "p95": 200.9686320554465
+      },
+      "throughput_rps": 2.667985427001208,
+      "cost_per_1k_usd": 0.113486
+    },
+    {
+      "run_id": "5499bc4b",
+      "timestamp": "2026-10-07T00:07:21.856105+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 3072,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-on",
+      "ttft_ms": {
+        "p50": 1210.1659518666565,
+        "p95": 4907.019863836467
+      },
+      "itl_ms": {
+        "p50": 56.81098997592926,
+        "p95": 217.80955251306295
+      },
+      "throughput_rps": 2.250920509788752,
+      "cost_per_1k_usd": 0.134513
+    },
+    {
+      "run_id": "b1e2bf69",
+      "timestamp": "2026-10-07T00:09:57.117934+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1024,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-off",
+      "ttft_ms": {
+        "p50": 159.2013635672629,
+        "p95": 349.42055167630315
+      },
+      "itl_ms": {
+        "p50": 27.68783224746585,
+        "p95": 99.8649733606726
+      },
+      "throughput_rps": 3.2191876449362673,
+      "cost_per_1k_usd": 0.094054
+    },
+    {
+      "run_id": "1110c960",
+      "timestamp": "2026-10-07T00:10:30.107740+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1536,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-off",
+      "ttft_ms": {
+        "p50": 220.96908930689096,
+        "p95": 533.1089695449919
+      },
+      "itl_ms": {
+        "p50": 31.272257678210735,
+        "p95": 144.2103162407875
+      },
+      "throughput_rps": 3.086546943021932,
+      "cost_per_1k_usd": 0.098096
+    },
+    {
+      "run_id": "db5927b9",
+      "timestamp": "2026-10-07T00:11:04.004718+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1792,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-off",
+      "ttft_ms": {
+        "p50": 335.346894338727,
+        "p95": 719.912429107353
+      },
+      "itl_ms": {
+        "p50": 34.58175249397755,
+        "p95": 167.92233609594405
+      },
+      "throughput_rps": 2.997094999833663,
+      "cost_per_1k_usd": 0.101024
+    },
+    {
+      "run_id": "5dff91fa",
+      "timestamp": "2026-10-07T00:11:38.502182+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 2048,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-off",
+      "ttft_ms": {
+        "p50": 404.5838015154004,
+        "p95": 952.5693770963697
+      },
+      "itl_ms": {
+        "p50": 40.28867743909359,
+        "p95": 192.06524873152375
+      },
+      "throughput_rps": 2.904590799257235,
+      "cost_per_1k_usd": 0.104241
+    },
+    {
+      "run_id": "0b3b8f52",
+      "timestamp": "2026-10-07T00:12:16.254553+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 2560,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-off",
+      "ttft_ms": {
+        "p50": 677.2804018110037,
+        "p95": 1650.9241809602825
+      },
+      "itl_ms": {
+        "p50": 49.442839343100786,
+        "p95": 452.9342546593398
+      },
+      "throughput_rps": 2.632439646599689,
+      "cost_per_1k_usd": 0.115018
+    },
+    {
+      "run_id": "97d23001",
+      "timestamp": "2026-10-07T00:12:58.716566+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 3072,
+      "request_rate": 4.0,
+      "max_concurrency": null,
+      "n_requests": 60,
+      "n_warmup_discarded": 8,
+      "prefix_cache": "disabled",
+      "label": "chunked-off",
+      "ttft_ms": {
+        "p50": 1114.9744004942477,
+        "p95": 6602.10844259709
+      },
+      "itl_ms": {
+        "p50": 54.44232514128089,
+        "p95": 541.9933742377907
+      },
+      "throughput_rps": 2.230261085455201,
+      "cost_per_1k_usd": 0.135759
+    },
+    {
+      "run_id": "8a1492e1",
+      "timestamp": "2026-10-07T00:15:34.454629+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1024,
+      "request_rate": 1.0,
+      "max_concurrency": null,
+      "n_requests": 40,
+      "n_warmup_discarded": 6,
+      "prefix_cache": "disabled",
+      "label": "rate-1",
+      "ttft_ms": {
+        "p50": 140.63028153032064,
+        "p95": 209.9036731757223
+      },
+      "itl_ms": {
+        "p50": 23.86189205572009,
+        "p95": 25.03426498733461
+      },
+      "throughput_rps": 0.9294513739300758,
+      "cost_per_1k_usd": 0.32576
+    },
+    {
+      "run_id": "554ee9f7",
+      "timestamp": "2026-10-07T00:16:30.626930+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 1536,
+      "request_rate": 1.0,
+      "max_concurrency": null,
+      "n_requests": 40,
+      "n_warmup_discarded": 6,
+      "prefix_cache": "disabled",
+      "label": "rate-1",
+      "ttft_ms": {
+        "p50": 184.719102922827,
+        "p95": 312.81271427869774
+      },
+      "itl_ms": {
+        "p50": 24.324812926352024,
+        "p95": 25.560293113812808
+      },
+      "throughput_rps": 0.9280311699776815,
+      "cost_per_1k_usd": 0.326258
+    },
+    {
+      "run_id": "d7b16f4f",
+      "timestamp": "2026-10-07T00:17:27.663393+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 2048,
+      "request_rate": 1.0,
+      "max_concurrency": null,
+      "n_requests": 40,
+      "n_warmup_discarded": 6,
+      "prefix_cache": "disabled",
+      "label": "rate-1",
+      "ttft_ms": {
+        "p50": 243.40122006833553,
+        "p95": 508.44572731293715
+      },
+      "itl_ms": {
+        "p50": 24.912426248192787,
+        "p95": 27.452141931280497
+      },
+      "throughput_rps": 0.9258992919523362,
+      "cost_per_1k_usd": 0.327009
+    },
+    {
+      "run_id": "a3656c22",
+      "timestamp": "2026-10-07T00:18:24.999846+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 2560,
+      "request_rate": 1.0,
+      "max_concurrency": null,
+      "n_requests": 40,
+      "n_warmup_discarded": 6,
+      "prefix_cache": "disabled",
+      "label": "rate-1",
+      "ttft_ms": {
+        "p50": 284.5024047419429,
+        "p95": 541.1210937425491
+      },
+      "itl_ms": {
+        "p50": 25.70802951231599,
+        "p95": 64.52471395023169
+      },
+      "throughput_rps": 0.9248849468281534,
+      "cost_per_1k_usd": 0.327368
+    },
+    {
+      "run_id": "1aa73f12",
+      "timestamp": "2026-10-07T00:19:22.903354+00:00",
+      "hardware": "RunPod L40S 48GB secure",
+      "model": "/workspace/models/qwen3-8b",
+      "quantization": "unknown",
+      "quant_kernel": "unknown",
+      "vllm_version": "0.28.0",
+      "sampler": "flashinfer",
+      "input_len_tokens": 3072,
+      "request_rate": 1.0,
+      "max_concurrency": null,
+      "n_requests": 40,
+      "n_warmup_discarded": 6,
+      "prefix_cache": "disabled",
+      "label": "rate-1",
+      "ttft_ms": {
+        "p50": 339.7138677537441,
+        "p95": 621.9196194317185
+      },
+      "itl_ms": {
+        "p50": 26.50791360065341,
+        "p95": 113.06616324000063
+      },
+      "throughput_rps": 0.9226799540636976,
+      "cost_per_1k_usd": 0.32815
+    }
+  ]
+}

@@ -58,6 +58,25 @@ and throughput were run as separate experiments: a low-rate pass measures what
 the model costs, a saturation pass measures what the scheduler does under
 pressure, and one number averaged across both describes neither.
 
+## A latency curve that was measuring the queue
+
+TTFT appeared to grow superlinearly with prompt length: roughly 4.6x between
+1,024 and 2,048 tokens at a 4 req/s arrival rate. Prefill is O(n) per layer, so
+that needed explaining rather than publishing.
+
+Two controls settled it. Disabling chunked prefill changed nothing, which ruled
+out the scheduler. Dropping the arrival rate to 1 req/s removed the bend
+entirely: per-token cost normalised to the 1,024-token baseline ran 1.00, 0.88,
+0.87, 0.81, 0.81 across 1,024 to 3,072 tokens — flat, slightly declining, since
+longer prefills use the GPU more efficiently. At 4 req/s the same series ran
+1.00, 0.99, 1.03, 1.50, 1.83, 2.66.
+
+At 3,072 tokens the identical work took 340 ms unqueued and 1,210 ms at 4 req/s.
+The curve was measuring the queue, not the model. This is precisely the failure
+the separate latency and throughput passes exist to prevent, and it still
+happened — the low-rate pass was low enough for short prompts and not for long
+ones.
+
 ## Retrieval improved a lot; the standard metric could not see it
 
 Retrieval was evaluated against 150 questions over the 12,000-abstract corpus.
