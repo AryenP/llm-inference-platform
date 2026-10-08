@@ -46,14 +46,22 @@ One L40S 48GB, vLLM 0.28.0, FlashInfer sampler, prefix caching **disabled**,
 
 ### Latency at a low arrival rate (4 req/s)
 
-Paced so TTFT reflects compute rather than queueing.
+Paced so TTFT reflects compute rather than queueing — with one caveat on the
+last row, measured and explained below.
 
 | input tokens | BF16 TTFT p50 | BF16 TTFT p95 | BF16 ITL p50 | AWQ TTFT p50 | AWQ TTFT p95 | AWQ ITL p50 |
 |---|---|---|---|---|---|---|
 | 128 | 73.5 ms | 85.3 ms | 23.67 ms | 34.1 ms | 41.0 ms | 8.42 ms |
 | 512 | 104.7 ms | 160.2 ms | 25.11 ms | 61.8 ms | 96.3 ms | 8.99 ms |
 | 1024 | 164.7 ms | 350.1 ms | 28.79 ms | 107.2 ms | 239.9 ms | 10.28 ms |
-| 2048 | 761.4 ms | 1745.6 ms | 55.59 ms | 570.3 ms | 1490.7 ms | 29.77 ms |
+| 2048 ⚠ | 761.4 ms | 1745.6 ms | 55.59 ms | 570.3 ms | 1490.7 ms | 29.77 ms |
+
+⚠ **The 2048 row is not a clean latency measurement.** Follow-up runs showed that
+above roughly 1,792 tokens a 4 req/s arrival rate exceeds what this server
+sustains, so those two cells include queueing delay and overstate what the model
+costs. They are kept because they are a true measurement of behaviour at that
+load, but they should not be read as prefill cost. The rows at 128, 512 and 1,024
+tokens are unaffected — per-token cost is flat across them.
 
 **TTFT looked non-linear in prompt length, and the cause was our own load.**
 At 4 req/s it roughly doubles from 128 to 1024 tokens then jumps 4.6x between
