@@ -208,6 +208,27 @@ toolkit is present, and `ninja` is part of the `serve` extra. The alternative �
 do — works but changes the sampler, and a sampler that differs between the
 machine under test and a production deployment is a difference worth not having.
 
+## `mounts.persistent` is not one thing
+
+The same request — `mounts.persistent`, 60 GB at `/workspace` — produced two
+different storage types in two data centers, with opposite failure modes.
+
+**Host-local.** Pinned to one machine. When that machine's GPUs filled, the
+stopped pod would not restart at all ("not enough free GPUs on the host"), and
+its disk was unrecoverable without terminating. This happened twice and cost a
+full rebuild each time.
+
+**Network-backed** (`mfs#us-mo-1.runpod.net`). Survives the host, so a restart
+can land anywhere. The cost is throughput: `uv sync` cannot hardlink across
+filesystems and falls back to copying, so building a 14 GB venv takes tens of
+minutes rather than a few.
+
+Neither is better in general. The practical rule is that **everything under
+`/workspace` has to be rebuildable**, because either kind can be lost, and
+`scripts/` rebuilds the whole stack unattended. On the network-backed kind,
+expect the first bootstrap to be slow and do not mistake it for a hang: check
+`du -sh .venv` rather than the log, which sits on one uv warning for minutes.
+
 ## Stopping vLLM means killing what is on the GPU
 
 `pkill -f "vllm serve"` kills the API server and leaves the **engine worker**
