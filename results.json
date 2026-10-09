@@ -24,7 +24,8 @@
       },
       "throughput_rps": 3.6373702117789612,
       "cost_per_1k_usd": 0.083241,
-      "max_concurrency": null
+      "max_concurrency": null,
+      "experiment": "latency"
     },
     {
       "run_id": "849e8eec",
@@ -50,7 +51,8 @@
       },
       "throughput_rps": 3.6277548536429274,
       "cost_per_1k_usd": 0.083461,
-      "max_concurrency": null
+      "max_concurrency": null,
+      "experiment": "latency"
     },
     {
       "run_id": "01393d39",
@@ -76,7 +78,8 @@
       },
       "throughput_rps": 3.6070213215351608,
       "cost_per_1k_usd": 0.083941,
-      "max_concurrency": null
+      "max_concurrency": null,
+      "experiment": "latency"
     },
     {
       "run_id": "32e75767",
@@ -102,7 +105,8 @@
       },
       "throughput_rps": 3.3143927443861894,
       "cost_per_1k_usd": 0.091352,
-      "max_concurrency": null
+      "max_concurrency": null,
+      "experiment": "latency"
     },
     {
       "run_id": "6ebb2bcd",
@@ -128,7 +132,8 @@
       },
       "throughput_rps": 0.3475372565381874,
       "cost_per_1k_usd": 0.87121,
-      "max_concurrency": 1
+      "max_concurrency": 1,
+      "experiment": "saturation"
     },
     {
       "run_id": "c72d070c",
@@ -154,7 +159,8 @@
       },
       "throughput_rps": 2.1094554705488338,
       "cost_per_1k_usd": 0.143534,
-      "max_concurrency": 8
+      "max_concurrency": 8,
+      "experiment": "saturation"
     },
     {
       "run_id": "f9f9077e",
@@ -180,7 +186,8 @@
       },
       "throughput_rps": 4.912035450429705,
       "cost_per_1k_usd": 0.06164,
-      "max_concurrency": 32
+      "max_concurrency": 32,
+      "experiment": "saturation"
     },
     {
       "run_id": "383ff985",
@@ -206,7 +213,8 @@
       },
       "throughput_rps": 6.307464140412498,
       "cost_per_1k_usd": 0.048003,
-      "max_concurrency": 64
+      "max_concurrency": 64,
+      "experiment": "saturation"
     },
     {
       "run_id": "8bfd159c",
@@ -232,7 +240,8 @@
       },
       "throughput_rps": 3.86027450790199,
       "cost_per_1k_usd": 0.078434,
-      "max_concurrency": null
+      "max_concurrency": null,
+      "experiment": "latency"
     },
     {
       "run_id": "3b4324e8",
@@ -258,7 +267,8 @@
       },
       "throughput_rps": 3.8545012165363945,
       "cost_per_1k_usd": 0.078552,
-      "max_concurrency": null
+      "max_concurrency": null,
+      "experiment": "latency"
     },
     {
       "run_id": "d426347a",
@@ -284,7 +294,8 @@
       },
       "throughput_rps": 3.8433024445956967,
       "cost_per_1k_usd": 0.078781,
-      "max_concurrency": null
+      "max_concurrency": null,
+      "experiment": "latency"
     },
     {
       "run_id": "ba9aa02e",
@@ -310,7 +321,8 @@
       },
       "throughput_rps": 3.5850356477708227,
       "cost_per_1k_usd": 0.084456,
-      "max_concurrency": null
+      "max_concurrency": null,
+      "experiment": "latency"
     },
     {
       "run_id": "0502aa7e",
@@ -336,7 +348,8 @@
       },
       "throughput_rps": 0.8657603153451033,
       "cost_per_1k_usd": 0.349725,
-      "max_concurrency": 1
+      "max_concurrency": 1,
+      "experiment": "saturation"
     },
     {
       "run_id": "fbbb8e92",
@@ -362,7 +375,8 @@
       },
       "throughput_rps": 4.246764792690486,
       "cost_per_1k_usd": 0.071296,
-      "max_concurrency": 8
+      "max_concurrency": 8,
+      "experiment": "saturation"
     },
     {
       "run_id": "4174e060",
@@ -388,7 +402,8 @@
       },
       "throughput_rps": 6.965100018576736,
       "cost_per_1k_usd": 0.043471,
-      "max_concurrency": 32
+      "max_concurrency": 32,
+      "experiment": "saturation"
     },
     {
       "run_id": "28505809",
@@ -414,7 +429,8 @@
       },
       "throughput_rps": 7.616080970161961,
       "cost_per_1k_usd": 0.039755,
-      "max_concurrency": 64
+      "max_concurrency": 64,
+      "experiment": "saturation"
     }
   ],
   "schema": {

@@ -111,7 +111,7 @@ def pick(raw: dict, *names, default=None):
 
 def to_row(raw: dict, *, model: str, quantization: str, kernel: str, vllm_version: str,
            sampler: str, hardware: str, input_len: int, rate, warmups: int,
-           hourly: float, max_concurrency=None, label="") -> dict:
+           hourly: float, experiment: str, max_concurrency=None, label="") -> dict:
     throughput = float(pick(raw, "request_throughput", default=0.0))
     return {
         "run_id": uuid.uuid4().hex[:8],
@@ -124,6 +124,7 @@ def to_row(raw: dict, *, model: str, quantization: str, kernel: str, vllm_versio
         "sampler": sampler,
         "input_len_tokens": input_len,
         "request_rate": float(rate) if rate != "inf" else -1.0,
+        "experiment": experiment,
         "max_concurrency": max_concurrency,
         "n_requests": int(pick(raw, "completed", "num_prompts", default=0)),
         "n_warmup_discarded": warmups,
@@ -160,6 +161,9 @@ def main():
                     help="extra flag passed to vllm serve, repeatable")
     ap.add_argument("--label", default="", help="tag recorded with each row")
     ap.add_argument("--skip-throughput", action="store_true")
+    ap.add_argument("--latency-concurrency", type=int, default=None,
+                    help="cap in-flight requests during the latency sweep; 1 serializes "
+                         "them, which is the only way to measure prefill without queueing")
     args = ap.parse_args()
 
     vllm_version = subprocess.run(
@@ -182,17 +186,25 @@ def main():
 
         proc = start_server(model, args.port, args.gpu_util, args.serve_arg)
         try:
-            # latency: low arrival rate, so ttft reflects compute not queueing
+            # latency: ttft is meant to be prefill compute, so arrivals must not
+            # queue. A low arrival rate alone does not achieve that — if a request
+            # takes longer than the inter-arrival gap, requests overlap anyway and
+            # the wait lands in ttft. --latency-concurrency 1 removes the question
+            # by allowing only one request in flight at a time.
+            lat_conc = args.latency_concurrency
             for input_len in args.input_lens:
-                for rate in args.rates:
+                for rate in (["inf"] if lat_conc == 1 else args.rates):
                     raw = run_bench(model, args.port, input_len, 128, args.n,
-                                    args.warmups, rate, label=f"lat-{quant}-{input_len}")
+                                    args.warmups, rate, max_concurrency=lat_conc,
+                                    label=f"lat-{quant}-{input_len}")
                     append(to_row(raw, model=model, quantization=quant, kernel=kernel,
                                   vllm_version=vllm_version, sampler="flashinfer",
                                   hardware=args.hardware, input_len=input_len, rate=rate,
                                   warmups=args.warmups, hourly=args.hourly,
+                                  experiment="latency", max_concurrency=lat_conc,
                                   label=args.label), args.out)
-                    print(f"  recorded latency {quant} in={input_len} rate={rate}", flush=True)
+                    print(f"  recorded latency {quant} in={input_len} rate={rate} "
+                          f"conc={lat_conc}", flush=True)
 
             # throughput: a separate experiment, saturated rather than paced
             for conc in [] if args.skip_throughput else args.concurrencies:
@@ -202,7 +214,7 @@ def main():
                               vllm_version=vllm_version, sampler="flashinfer",
                               hardware=args.hardware, input_len=1024, rate="inf",
                               warmups=args.warmups, hourly=args.hourly,
-                              max_concurrency=conc), args.out)
+                              experiment="saturation", max_concurrency=conc), args.out)
                 print(f"  recorded throughput {quant} concurrency={conc}", flush=True)
         finally:
             stop_server(proc)

@@ -15,6 +15,7 @@ GOOD = {
     "sampler": "flashinfer",
     "input_len_tokens": 1024,
     "request_rate": 4.0,
+    "experiment": "latency",
     "n_requests": 200,
     "n_warmup_discarded": 10,
     "prefix_cache": "disabled",
@@ -102,3 +103,19 @@ def test_a_saturation_run_must_name_its_concurrency():
 
 def test_a_paced_run_needs_no_concurrency():
     assert problems({**GOOD, "request_rate": 4.0, "max_concurrency": None}) == []
+
+
+def test_an_unknown_experiment_is_rejected():
+    got = problems({**GOOD, "experiment": "throughput"})
+
+    assert got == [
+        "experiment is 'throughput', expected one of ('latency', 'saturation')"
+    ]
+
+
+def test_a_row_without_an_experiment_is_rejected():
+    # a serialized latency run and a saturation run at concurrency 1 are the same
+    # request pattern, so the row has to say which one it is
+    got = problems({k: v for k, v in GOOD.items() if k != "experiment"})
+
+    assert got == ["missing experiment"]

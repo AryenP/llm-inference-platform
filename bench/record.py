@@ -17,6 +17,7 @@ REQUIRED = (
     "sampler",
     "input_len_tokens",
     "request_rate",
+    "experiment",
     "n_requests",
     "n_warmup_discarded",
     "prefix_cache",
@@ -29,6 +30,13 @@ REQUIRED = (
 # max_concurrency is deliberately not in REQUIRED: a paced run has none. But a
 # saturation run that omits it cannot be told apart from another, so it is
 # checked below against the request rate instead.
+
+# Which experiment produced the row. These are not interchangeable and must not
+# be read off the other fields: a latency run bounded to one in-flight request
+# looks exactly like a saturation run at concurrency 1, so without this the two
+# can only be told apart by their input length, which is a coincidence, not a
+# distinction.
+EXPERIMENTS = ("latency", "saturation")
 PERCENTILES = ("p50", "p95")
 
 # A sweep run against a warm server measures the cache, not the engine. There is
@@ -46,6 +54,10 @@ def problems(row: dict) -> list[str]:
             out += [f"{field} missing {p}" for p in PERCENTILES if value.get(p) is None]
         elif value is not None:
             out.append(f"{field} must carry percentiles, not a single number")
+
+    experiment = row.get("experiment")
+    if experiment is not None and experiment not in EXPERIMENTS:
+        out.append(f"experiment is {experiment!r}, expected one of {EXPERIMENTS}")
 
     cache = row.get("prefix_cache")
     if cache is not None and cache not in CACHE_STATES:
