@@ -208,6 +208,23 @@ toolkit is present, and `ninja` is part of the `serve` extra. The alternative �
 do — works but changes the sampler, and a sampler that differs between the
 machine under test and a production deployment is a difference worth not having.
 
+## A stopped pod is not a pod you can get back
+
+Three pods were lost to the same thing: `stop` succeeds, and `start` then fails
+with "not enough free GPUs on the host machine" because the stopped pod is still
+bound to the machine it ran on. If that machine's GPUs are taken in the meantime,
+the pod cannot come back and its disk goes with it.
+
+**Network-backed storage does not fix this.** The third pod had `/workspace` on
+`mfs#us-nc-1.runpod.net` and still refused to restart, so the binding is to the
+host, not the disk.
+
+The working assumption is therefore that **stopping is not a pause, it is a bet**.
+Short gaps are fine; anything longer and it is cheaper to terminate and rebuild,
+because the rebuild is scripted and the alternative is discovering at the worst
+moment that the environment is gone. That is also why nothing irreplaceable is
+kept on a pod and every result is pulled down and committed as soon as it exists.
+
 ## `mounts.persistent` is not one thing
 
 The same request — `mounts.persistent`, 60 GB at `/workspace` — produced two
