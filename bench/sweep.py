@@ -1,7 +1,9 @@
 import argparse
 import json
 import pathlib
+import shutil
 import subprocess
+import sys
 import time
 import uuid
 from datetime import UTC, datetime
@@ -13,6 +15,20 @@ from bench.record import append
 from bench.stats import cost_per_1k
 
 RESULT_DIR = pathlib.Path("/tmp/bench")
+
+
+def vllm_bin() -> str:
+    # Resolve the interpreter's own venv first. A detached run (setsid/nohup) does
+    # not inherit the PATH that found `vllm` interactively, and bare "vllm" then
+    # fails inside Popen — the sweep sat for twenty minutes with an empty log and
+    # an idle GPU before that was spotted.
+    candidate = pathlib.Path(sys.executable).with_name("vllm")
+    if candidate.exists():
+        return str(candidate)
+    found = shutil.which("vllm")
+    if not found:
+        raise SystemExit("vllm not found next to the interpreter or on PATH")
+    return found
 
 
 def wait_for(url: str, timeout_s: int = 600) -> bool:
@@ -33,7 +49,7 @@ def start_server(model: str, port: int, gpu_util: float, extra: list[str] | None
     # easiest way to publish a number that cannot be reproduced.
     proc = subprocess.Popen(
         [
-            "vllm", "serve", model,
+            vllm_bin(), "serve", model,
             "--port", str(port),
             "--max-model-len", "8192",
             "--gpu-memory-utilization", str(gpu_util),
@@ -63,7 +79,7 @@ def run_bench(model: str, port: int, input_len: int, output_len: int, n: int,
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
     name = f"{label}-{uuid.uuid4().hex[:6]}.json"
     cmd = [
-        "vllm", "bench", "serve",
+        vllm_bin(), "bench", "serve",
         "--model", model,
         "--base-url", f"http://localhost:{port}",
         "--dataset-name", "random",
@@ -147,7 +163,7 @@ def main():
     args = ap.parse_args()
 
     vllm_version = subprocess.run(
-        ["vllm", "--version"], capture_output=True, text=True, check=False
+        [vllm_bin(), "--version"], capture_output=True, text=True, check=False
     ).stdout.strip().splitlines()[-1]
 
     targets = args.models or [

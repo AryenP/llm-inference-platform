@@ -72,3 +72,28 @@ def test_cost_falls_as_throughput_rises():
 def test_cost_at_zero_throughput_raises_rather_than_dividing_by_zero():
     with pytest.raises(ValueError):
         cost_per_1k(0.79, 0.0)
+
+
+def test_vllm_is_resolved_next_to_the_interpreter(tmp_path, monkeypatch):
+    import sys
+
+    from bench import sweep
+
+    fake = tmp_path / "python"
+    fake.write_text("")
+    (tmp_path / "vllm").write_text("")
+    monkeypatch.setattr(sys, "executable", str(fake))
+
+    # a detached run has no useful PATH, so the venv sibling must win
+    assert sweep.vllm_bin() == str(tmp_path / "vllm")
+
+
+def test_vllm_resolution_falls_back_to_path(tmp_path, monkeypatch):
+    import sys
+
+    from bench import sweep
+
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "python"))
+    monkeypatch.setattr(sweep.shutil, "which", lambda _: "/usr/bin/vllm")
+
+    assert sweep.vllm_bin() == "/usr/bin/vllm"
